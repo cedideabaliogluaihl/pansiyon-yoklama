@@ -720,12 +720,10 @@ function resetKatScreen(){
 
 function selectFloor(floor){
   selectedFloor=floor;
-  // Önceki ismi hatırla
   const saved=localStorage.getItem('teacherName_f'+floor)||'';
   document.getElementById('katNameInput').value=saved;
   document.getElementById('katBtns').style.display='none';
   document.getElementById('katNameArea').style.display='';
-  setTimeout(()=>document.getElementById('katNameInput').focus(),100);
 }
 
 function confirmFloor(){
@@ -739,8 +737,14 @@ function confirmFloor(){
   startApp(selectedFloor);
 }
 function checkPin(){
-  if(document.getElementById('pinInput').value===ADMIN_PIN){isAdmin=true;goScreen('screenKat');}
-  else{document.getElementById('pinError').classList.remove('hidden');document.getElementById('pinInput').value='';}
+  if(document.getElementById('pinInput').value===ADMIN_PIN){
+    isAdmin=true;
+    goScreen('screenKat');
+    resetKatScreen();
+  } else {
+    document.getElementById('pinError').classList.remove('hidden');
+    document.getElementById('pinInput').value='';
+  }
 }
 
 async function startApp(floor){
