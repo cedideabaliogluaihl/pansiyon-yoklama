@@ -1382,7 +1382,7 @@ async function _buildPDF() {
 
     // Gün + vakit başlıkları
     weekDates.forEach((d, di) => {
-      const gx = X_DAYS + di * 5 * VW;
+      const gx = X_DAYS + di * 6 * VW;
       const gw = 5 * VW;
       // Gün satırı
       doc.setFillColor(190,190,190);
@@ -1440,7 +1440,7 @@ async function _buildPDF() {
           VAKIT_KEYS.forEach((vakit, vi) => {
             const vd = dayData[vakit] || {};
             const st = vd[String(s.id)];
-            const vx = X_DAYS + (di * 5 + vi) * VW;
+            const vx = X_DAYS + (di * 6 + vi) * VW;
             let txt = '', r=0, g=0, b=0, fs=5.5;
             if      (st === true)  { txt='+'; r=0;   g=130; b=0;   fs=6; }
             else if (st === false) { txt='-'; r=180; g=0;   b=0; }
@@ -1488,7 +1488,7 @@ async function _buildPDF() {
     // Gün ayırıcılar
     weekDates.forEach((_, di) => {
       if (di === 0) return;
-      const gx = X_DAYS + di * 5 * VW;
+      const gx = X_DAYS + di * 6 * VW;
       doc.setDrawColor(100); doc.setLineWidth(0.25);
       doc.line(gx, tblTop, gx, rowY);
     });
@@ -1512,7 +1512,7 @@ async function _buildPDF() {
     // Her gün için imza kutusu — gün sütunuyla tam hizalı
     for(let di=0; di<weekDates.length; di++){
       const d = weekDates[di];
-      const gx = X_DAYS + di * 5 * VW;
+      const gx = X_DAYS + di * 6 * VW;
       const gw = 5 * VW;
 
       // Kutu arka plan
