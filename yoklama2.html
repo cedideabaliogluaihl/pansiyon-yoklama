@@ -368,7 +368,6 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
 
   <div class="bottom-bar">
     <button class="btn btn-danger" onclick="confirmReset()">🗑</button>
-    <button class="btn btn-green" onclick="markAllPresent()">✅ Tümünü İşaretle</button>
     <button class="btn btn-save" id="saveBtn" onclick="lockCurrentTime()">💾 Kaydet</button>
     <button class="btn btn-blue" onclick="openReport()">📊 Rapor</button>
     <button class="btn btn-purple" id="pdfBtn" onclick="exportPDF()" style="display:none;">📄 Haftalık PDF</button>
@@ -1220,7 +1219,7 @@ function renderAll(){
     const rs=visible.filter(s=>s.room===room);
     const pres=rs.filter(s=>attendance[String(s.id)]===true).length;
     const cod=rs.filter(s=>typeof attendance[String(s.id)]==='string').length;
-    html+=`<div class="room-header"><div class="room-badge">ODA ${room}</div><div class="room-divider"></div><div class="room-count">${pres} mevcut${cod?` • ${cod} kodlu`:''}</div><button onclick="markRoomPresent(${room})" style="margin-left:auto;padding:3px 8px;border-radius:6px;border:none;background:var(--present);color:#000;font-size:11px;font-weight:700;cursor:pointer;">✅ Tümü</button></div>`;
+    html+=`<div class="room-header"><div class="room-badge">ODA ${room}</div><div class="room-divider"></div><div class="room-count">${pres} mevcut${cod?` • ${cod} kodlu`:''}</div><button onclick="markRoomPresent(${room})" style="margin-left:auto;padding:3px 8px;border-radius:6px;border:none;background:var(--present);color:#000;font-size:11px;font-weight:700;cursor:pointer;">✅ Odayı İşaretle</button></div>`;
     rs.forEach(s=>{
       const st=attendance[String(s.id)];
       const locked=isLocked(s.id);
@@ -1260,7 +1259,8 @@ function markAllPresent(){
 
 async function markRoomPresent(room){
   if(await isTimeLocked(currentTime)){showToast('🔒 Bu vakit kilitli!');return;}
-  const roomStudents = students.filter(s=>s.room===room);
+  const roomStr = String(room);
+  const roomStudents = students.filter(s=>String(s.room)===roomStr);
   roomStudents.forEach(s=>{
     if(!isLocked(String(s.id))) attendance[String(s.id)]=true;
   });
