@@ -336,6 +336,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
       </div>
       <div style="display:flex;align-items:center;gap:5px;">
         <div class="date-badge" id="currentDate"></div>
+        <button class="logout-btn" id="resetNameBtn" style="display:none;background:#dc2626;" onclick="showResetNamePopup()">🗑 İsim</button>
         <button class="logout-btn" onclick="logout()">Çıkış</button>
       </div>
     </div>
@@ -375,6 +376,14 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
 </div>
 
 <!-- CONFIRM -->
+<div class="confirm-popup hidden" id="resetNamePopup" style="z-index:999;">
+  <div class="cp-title">🗑 İsim Sıfırla</div>
+  <div class="cp-sub">Hangi günün ismini sıfırlayalım?</div>
+  <div id="resetNameDays" style="display:flex;flex-direction:column;gap:6px;margin:10px 0;max-height:200px;overflow-y:auto;"></div>
+  <div class="cp-btns">
+    <button class="cp-btn cp-cancel" onclick="document.getElementById('resetNamePopup').classList.add('hidden')">İptal</button>
+  </div>
+</div>
 <div class="confirm-popup hidden" id="confirmPopup">
   <div class="cp-title">🗑 Yoklamayı Sıfırla</div>
   <div class="cp-sub">Ne kadarını silmek istiyorsun?</div>
@@ -738,6 +747,9 @@ async function startApp(floor){
   // Header
   document.getElementById('floorBadge').textContent=FLOORS[floor].label;
   document.getElementById('adminBadge').classList.toggle('hidden',!isAdmin);
+  if(isAdmin){ 
+    document.getElementById('resetNameBtn').style.display='';
+  }
   document.getElementById('currentDate').textContent=today.toLocaleDateString('tr-TR',{weekday:'short',day:'2-digit',month:'2-digit'});
   // Room filter
   const roomSel=document.getElementById('roomFilter');
@@ -762,7 +774,31 @@ function logout(){
   location.reload();
 }
 
-// ── KİLİT SİSTEMİ ──
+// ── İSİM SIFIRLAMA ──
+function showResetNamePopup(){
+  const popup = document.getElementById('resetNamePopup');
+  const container = document.getElementById('resetNameDays');
+  container.innerHTML = '';
+  const wk = getWeekDates();
+  wk.forEach(d => {
+    const fbKey = 'f'+currentFloor+'_'+d.key;
+    const btn = document.createElement('button');
+    btn.style.cssText = 'padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:Noto Sans,sans-serif;font-size:13px;cursor:pointer;text-align:left;';
+    btn.textContent = d.label + ' ' + d.short;
+    btn.onclick = () => resetNameForDay(fbKey, d.label+' '+d.short);
+    container.appendChild(btn);
+  });
+  popup.classList.remove('hidden');
+}
+
+function resetNameForDay(fbKey, label){
+  fetch(FB_URL+'/teachers/'+fbKey+'.json',{method:'DELETE'}).catch(()=>{});
+  localStorage.removeItem('teacherName_'+fbKey);
+  document.getElementById('resetNamePopup').classList.add('hidden');
+  showToast('✅ '+label+' ismi silindi');
+}
+
+
 function getLockedTimes(){ try{ return JSON.parse(localStorage.getItem('locked_'+(window._activeKey||todayKey)||'[]')||'[]'); }catch(e){return[];} }
 function isTimeLocked(t){ return getLockedTimes().includes(t); }
 
