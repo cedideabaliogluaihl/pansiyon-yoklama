@@ -721,13 +721,10 @@ function logout(){
   if(currentFloor){
     attendanceHistory[currentTime]={...attendance};
     try{ localStorage.setItem('yoklama_f'+currentFloor+'_'+todayKey, JSON.stringify(attendanceHistory)); }catch(e){}
-    // Cloud'a fire-and-forget (beklemeden)
     saveToCloud(currentFloor, todayKey, attendanceHistory).catch(()=>{});
   }
   clearTimeout(saveTimer); isSaving=false;
-  currentFloor=null; isAdmin=false; students=[]; attendance={}; attendanceHistory={};
-  hideSync();
-  goScreen('screenLogin');
+  location.reload();
 }
 
 // ── STATUS HELPERS ──
