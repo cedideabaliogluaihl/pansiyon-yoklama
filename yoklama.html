@@ -3,9 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <meta name="theme-color" content="#0d1117">
-<title>Yoklama</title>
+<title>Yoklama v3</title>
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Noto+Sans:wght@300;400;600&display=swap');
 
@@ -526,11 +530,13 @@ const FB_URL = 'https://yokama-default-rtdb.firebaseio.com';
 
 async function saveToCloud(floor, dateKey, data){
   const key = 'f'+floor+'_'+dateKey;
+  // Firebase false değerlerini siliyor — 0 olarak kaydet
+  const firebaseData = JSON.parse(JSON.stringify(data, (k,v) => v === false ? 0 : v));
   try{
     await fetch(FB_URL+'/yoklama/'+key+'.json', {
       method:'PUT',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify(data)
+      body:JSON.stringify(firebaseData)
     });
     localStorage.setItem('yoklama_'+key, JSON.stringify(data));
   }catch(e){
@@ -543,8 +549,13 @@ async function loadFromCloud(floor, dateKey){
   const key = 'f'+floor+'_'+dateKey;
   try{
     const res = await fetch(FB_URL+'/yoklama/'+key+'.json?'+Date.now(), {cache:'no-store'});
-    const data = await res.json();
-    if(data){ localStorage.setItem('yoklama_'+key, JSON.stringify(data)); return data; }
+    const raw = await res.json();
+    if(raw){
+      // 0 → false'a çevir
+      const data = JSON.parse(JSON.stringify(raw, (k,v) => v === 0 ? false : v));
+      localStorage.setItem('yoklama_'+key, JSON.stringify(data));
+      return data;
+    }
   }catch(e){}
   try{ const s=localStorage.getItem('yoklama_'+key); return s?JSON.parse(s):{}; }catch(e){ return {}; }
 }
