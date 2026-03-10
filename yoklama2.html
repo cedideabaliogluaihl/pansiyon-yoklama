@@ -1220,7 +1220,7 @@ function renderAll(){
     const rs=visible.filter(s=>s.room===room);
     const pres=rs.filter(s=>attendance[String(s.id)]===true).length;
     const cod=rs.filter(s=>typeof attendance[String(s.id)]==='string').length;
-    html+=`<div class="room-header"><div class="room-badge">ODA ${room}</div><div class="room-divider"></div><div class="room-count">${pres} mevcut${cod?` • ${cod} kodlu`:''}</div></div>`;
+    html+=`<div class="room-header"><div class="room-badge">ODA ${room}</div><div class="room-divider"></div><div class="room-count">${pres} mevcut${cod?` • ${cod} kodlu`:''}</div><button onclick="markRoomPresent(${room})" style="margin-left:auto;padding:3px 8px;border-radius:6px;border:none;background:var(--present);color:#000;font-size:11px;font-weight:700;cursor:pointer;">✅ Tümü</button></div>`;
     rs.forEach(s=>{
       const st=attendance[String(s.id)];
       const locked=isLocked(s.id);
@@ -1256,6 +1256,16 @@ function renderAll(){
 function markAllPresent(){
   getVisible().forEach(s=>{if(!isLocked(String(s.id))&&attendance[String(s.id)]===false)attendance[String(s.id)]=true;});
   renderAll();updateStats();saveToStorage();showToast('✅ Tümü işaretlendi');
+}
+
+async function markRoomPresent(room){
+  if(await isTimeLocked(currentTime)){showToast('🔒 Bu vakit kilitli!');return;}
+  const roomStudents = students.filter(s=>s.room===room);
+  roomStudents.forEach(s=>{
+    if(!isLocked(String(s.id))) attendance[String(s.id)]=true;
+  });
+  renderAll();updateStats();saveToStorage();
+  showToast('✅ Oda '+room+' işaretlendi');
 }
 
 // ── RESET ──
