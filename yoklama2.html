@@ -277,11 +277,8 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
     <div class="login-logo">📋</div>
     <div style="text-align:center;">
       <div class="login-title">YOKLAMA SİSTEMİ</div>
-      <div class="login-sub">Nöbet girişi için PIN'inizi girin</div>
+      <div class="login-sub">Nöbet girişi</div>
     </div>
-    <input id="teacherPinInput" type="password" placeholder="PIN'iniz" maxlength="4"
-      style="width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text);font-size:20px;letter-spacing:6px;font-family:'Noto Sans',sans-serif;box-sizing:border-box;text-align:center;">
-    <div style="font-size:11px;color:var(--muted);text-align:center;margin-top:-4px;">Admin tarafından atandıysanız PIN'inizle girin</div>
     <div class="login-btns">
       <button class="login-btn btn-nobetci" onclick="goKatSec()">👮 Nöbetçi Girişi</button>
       <button class="login-btn btn-admin" onclick="goAdmin()" style="margin-top:4px;">🔐 Admin Girişi</button>
@@ -403,6 +400,18 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
       </div>
       <div id="teacherListItems" style="display:flex;flex-direction:column;gap:6px;overflow-y:auto;"></div>
     </div>
+  </div>
+</div>
+
+<div class="confirm-popup hidden" id="pinPopup" style="z-index:1000;">
+  <div class="cp-title" id="pinPopupTitle">PIN Girin</div>
+  <div class="cp-sub" id="pinPopupSub"></div>
+  <input id="pinPopupInput" type="password" maxlength="4" placeholder="••••"
+    style="width:100%;padding:12px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface);color:var(--text);font-size:24px;letter-spacing:8px;text-align:center;font-family:'Noto Sans',sans-serif;box-sizing:border-box;margin:8px 0;"
+    onkeydown="if(event.key==='Enter')confirmPinPopup()">
+  <div class="cp-btns" style="margin-top:4px;">
+    <button class="cp-y" onclick="confirmPinPopup()">✓ Onayla</button>
+    <button class="cp-n" onclick="cancelPinPopup()">İptal</button>
   </div>
 </div>
 
@@ -703,9 +712,6 @@ window.addEventListener('load',()=>{
 let selectedFloor = null;
 
 async function goKatSec(){
-  const pin = document.getElementById('teacherPinInput').value.trim();
-  if(!pin || pin.length < 4){showToast('⚠️ 4 haneli PIN girin');return;}
-  window._enteredPin = pin;
   // Dropdown doldur
   const sel = document.getElementById('nobetGunSelect');
   sel.innerHTML = '';
@@ -743,11 +749,9 @@ async function startApp(floor){
   const selectedKey = sel ? sel.value : todayKey;
   window._activeKey = selectedKey;
 
-  // Admin direkt geçer
   if(!isAdmin){
-    const pin = window._enteredPin;
     const fbKey = 'f'+floor+'_'+selectedKey;
-    // Firebase'den atamayı kontrol et
+    // Atama var mı kontrol et
     let assignment = null;
     try{
       const r = await fetch(FB_URL+'/assignments/'+fbKey+'.json',{cache:'no-store'});
@@ -757,7 +761,7 @@ async function startApp(floor){
       showToast('🚫 Bu güne bu kata atama yapılmamış!');
       return;
     }
-    // Kişiye ait PIN'i Firebase'den çek
+    // PIN popup aç
     const teacherKey = assignment.name.replace(/\s+/g,'_');
     let savedPin = '';
     try{
@@ -765,21 +769,54 @@ async function startApp(floor){
       const j2 = await r2.json();
       if(j2 && j2.pin) savedPin = j2.pin;
     }catch(e){}
-    if(savedPin){
-      // PIN daha önce belirlenmişse doğrula
-      if(pin !== savedPin){
-        showToast('🚫 Yanlış PIN!');
-        return;
+    const isFirstTime = !savedPin;
+    showPinPopup(
+      isFirstTime ? '🔑 PIN Belirle' : '🔒 PIN Girin',
+      isFirstTime
+        ? 'Sayın '+assignment.name+', ilk girişiniz. 4 haneli PIN belirleyin.'
+        : 'Sayın '+assignment.name+', PIN\'inizi girin.',
+      async (enteredPin) => {
+        if(isFirstTime){
+          // PIN kaydet
+          await fetch(FB_URL+'/teacherPins/'+teacherKey+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin:enteredPin,name:assignment.name})});
+          showToast('🔑 PIN belirlendi, hoş geldin '+assignment.name+'!');
+        } else {
+          if(enteredPin !== savedPin){ showToast('🚫 Yanlış PIN!'); return false; }
+        }
+        window._activeTeacherName = assignment.name;
+        localStorage.setItem('teacherName', assignment.name);
+        await continueStartApp(floor, selectedKey);
+        return true;
       }
-    } else {
-      // İlk giriş — PIN belirle ve kişiye kaydet
-      fetch(FB_URL+'/teacherPins/'+teacherKey+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin:pin,name:assignment.name})}).catch(()=>{});
-      showToast('🔑 PIN belirlendi, hoş geldin '+assignment.name+'!');
-    }
-    localStorage.setItem('teacherName', assignment.name);
-    window._activeTeacherName = assignment.name;
-    window._enteredPin = null;
+    );
+    return;
   }
+  await continueStartApp(floor, selectedKey);
+}
+
+// ── PIN POPUP ──
+let _pinCallback = null;
+function showPinPopup(title, sub, callback){
+  _pinCallback = callback;
+  document.getElementById('pinPopupTitle').textContent = title;
+  document.getElementById('pinPopupSub').textContent = sub;
+  document.getElementById('pinPopupInput').value = '';
+  document.getElementById('pinPopup').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('pinPopupInput').focus(),100);
+}
+async function confirmPinPopup(){
+  const pin = document.getElementById('pinPopupInput').value.trim();
+  if(!pin || pin.length < 4){showToast('⚠️ 4 haneli PIN girin');return;}
+  document.getElementById('pinPopup').classList.add('hidden');
+  if(_pinCallback){ const ok = await _pinCallback(pin); if(!ok) document.getElementById('pinPopupInput').value=''; }
+  _pinCallback = null;
+}
+function cancelPinPopup(){
+  document.getElementById('pinPopup').classList.add('hidden');
+  _pinCallback = null;
+}
+
+async function continueStartApp(floor, selectedKey){
   attendance=Object.fromEntries(students.map(s=>[String(s.id),false]));
   attendanceHistory={}; currentTime='Akşam';
   // Header
