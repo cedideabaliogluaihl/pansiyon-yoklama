@@ -325,7 +325,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
       <button class="time-btn active" data-time="Akşam" onclick="setTime('Akşam')">🌆 Akşam</button>
       <button class="time-btn" data-time="Etüt" onclick="setTime('Etüt')">📚 Etüt</button>
       <button class="time-btn" data-time="Yatsı" onclick="setTime('Yatsı')">🌙 Yatsı</button>
-      <button class="time-btn" data-time="Yatış" onclick="setTime('Yatış')">🛏 Yatış</button>
+      <button class="time-btn" data-time="Uyku" onclick="setTime('Uyku')">🛏 Uyku</button>
       <button class="time-btn" data-time="Sabah" onclick="setTime('Sabah')">🌅 Sabah</button>
       <button class="time-btn" data-time="Telefon" onclick="setTime('Telefon')">📞 Telefon</button>
     </div>
@@ -491,7 +491,7 @@ const FLOORS = {
 };
 
 const CODES = ['İ','R','G','E'];
-const TIMES = ['Akşam','Etüt','Yatsı','Yatış','Sabah','Telefon'];
+const TIMES = ['Akşam','Etüt','Yatsı','Uyku','Sabah','Telefon'];
 const DAYS  = ['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'];
 const ADMIN_PIN = '1234';
 
@@ -1013,7 +1013,7 @@ async function buildPrintHTML(){
         weekDates.forEach(({key},di)=>{
           const dayData=floorData[key]||{};
           // 5 vakit: Akşam Etüt Yatsı Sabah Telefon
-          ['Akşam','Etüt','Yatsı','Yatış','Sabah','Telefon'].forEach((vakit,vi)=>{
+          ['Akşam','Etüt','Yatsı','Uyku','Sabah','Telefon'].forEach((vakit,vi)=>{
             const vd=dayData[vakit]||{};
             const st=vd[s.id];
             let cell='';
@@ -1106,7 +1106,7 @@ async function exportExcel() {
   const wb = XLSX.utils.book_new();
   const weekDates = getWeekDates();
   const weekLabel = weekDates[0].short + ' - ' + weekDates[6].short;
-  const VAKITLER = ['Akşam','Etüt','Yatsı','Yatış','Sabah','Telefon'];
+  const VAKITLER = ['Akşam','Etüt','Yatsı','Uyku','Sabah','Telefon'];
 
   for(const floor of [2, 3]) {
     const floorData = await getAllDataForFloor(floor);
@@ -1244,8 +1244,8 @@ async function _buildPDF() {
   const { jsPDF } = window.jspdf;
   const weekDates = getWeekDates();
   // Vakit isimleri - ASCII only
-  const VAKITLER     = ['Aksam','Etut','Yatsi','Yatis','Sabah','Tel'];
-  const VAKIT_KEYS   = ['Akşam','Etüt','Yatsı','Yatış','Sabah','Telefon'];
+  const VAKITLER     = ['Aksam','Etut','Yatsi','Uyku','Sabah','Tel'];
+  const VAKIT_KEYS   = ['Akşam','Etüt','Yatsı','Uyku','Sabah','Telefon'];
   const DAY_ABBR     = ['Pzt','Sal','Car','Per','Cum','Cmt','Paz'];
 
   const doc = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
