@@ -336,7 +336,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
       </div>
       <div style="display:flex;align-items:center;gap:5px;">
         <div class="date-badge" id="currentDate"></div>
-        <button class="logout-btn" id="resetNameBtn" style="display:none;background:#dc2626;" onclick="showResetNamePopup()">🗑 İsim</button>
+        <button class="logout-btn" id="resetNameBtn" style="display:none;background:#dc2626;" onclick="openAdminPanel()">🔐 Panel</button>
         <button class="logout-btn" onclick="logout()">Çıkış</button>
       </div>
     </div>
@@ -375,15 +375,18 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
   </div>
 </div>
 
-<!-- CONFIRM -->
-<div class="confirm-popup hidden" id="resetNamePopup" style="z-index:999;">
-  <div class="cp-title">🗑 İsim Sıfırla</div>
-  <div class="cp-sub">Hangi günün ismini sıfırlayalım?</div>
-  <div id="resetNameDays" style="display:flex;flex-direction:column;gap:6px;margin:10px 0;max-height:200px;overflow-y:auto;"></div>
-  <div class="cp-btns">
-    <button class="cp-btn cp-cancel" onclick="document.getElementById('resetNamePopup').classList.add('hidden')">İptal</button>
+<!-- ADMİN PANELİ -->
+<div class="screen" id="screenAdminPanel">
+  <div style="display:flex;flex-direction:column;height:100%;padding:20px 16px;gap:14px;box-sizing:border-box;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <button class="back-btn" style="margin:0;" onclick="goScreen('screenMain')">← Geri</button>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--accent);">🔐 Admin Paneli</div>
+    </div>
+    <div style="font-size:13px;color:var(--muted);margin-top:-6px;">Nöbetçi öğretmen isimlerini yönet</div>
+    <div id="adminNameList" style="display:flex;flex-direction:column;gap:8px;overflow-y:auto;flex:1;"></div>
   </div>
 </div>
+
 <div class="confirm-popup hidden" id="confirmPopup">
   <div class="cp-title">🗑 Yoklamayı Sıfırla</div>
   <div class="cp-sub">Ne kadarını silmek istiyorsun?</div>
@@ -774,27 +777,51 @@ function logout(){
   location.reload();
 }
 
-// ── İSİM SIFIRLAMA ──
-function showResetNamePopup(){
-  const popup = document.getElementById('resetNamePopup');
-  const container = document.getElementById('resetNameDays');
-  container.innerHTML = '';
+// ── ADMİN PANELİ ──
+async function openAdminPanel(){
+  goScreen('screenAdminPanel');
+  const container = document.getElementById('adminNameList');
+  container.innerHTML = '<div style="color:var(--muted);font-size:13px;">Yükleniyor...</div>';
+  // Firebase'den tüm teacher isimlerini çek
+  let teacherNames = {};
+  try{
+    const r = await fetch(FB_URL+'/teachers.json?'+Date.now(),{cache:'no-store'});
+    const j = await r.json();
+    if(j) teacherNames = j;
+  }catch(e){}
   const wk = getWeekDates();
-  wk.forEach(d => {
-    const fbKey = 'f'+currentFloor+'_'+d.key;
-    const btn = document.createElement('button');
-    btn.style.cssText = 'padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-family:Noto Sans,sans-serif;font-size:13px;cursor:pointer;text-align:left;';
-    btn.textContent = d.label + ' ' + d.short;
-    btn.onclick = () => resetNameForDay(fbKey, d.label+' '+d.short);
-    container.appendChild(btn);
+  container.innerHTML = '';
+  // Her kat için
+  [2,3].forEach(floor => {
+    const floorDiv = document.createElement('div');
+    floorDiv.style.cssText = 'font-family:Rajdhani,sans-serif;font-size:15px;font-weight:700;color:var(--accent);margin-top:8px;';
+    floorDiv.textContent = floor+'. Kat';
+    container.appendChild(floorDiv);
+    wk.forEach(d => {
+      const fbKey = 'f'+floor+'_'+d.key;
+      const name = (teacherNames[fbKey] && teacherNames[fbKey].name) || '';
+      const row = document.createElement('div');
+      row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);';
+      row.innerHTML = `
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--text);">${d.label} ${d.short}</div>
+          <div style="font-size:12px;color:${name?'var(--accent)':'var(--muted)'};">${name || '— boş —'}</div>
+        </div>
+        ${name ? `<button onclick="resetNameForDay('${fbKey}','${d.label} ${d.short}', this)" style="padding:6px 10px;border-radius:8px;border:none;background:#dc2626;color:#fff;font-size:12px;font-weight:700;cursor:pointer;">🗑 Sil</button>` : ''}
+      `;
+      container.appendChild(row);
+    });
   });
-  popup.classList.remove('hidden');
 }
 
-function resetNameForDay(fbKey, label){
+function resetNameForDay(fbKey, label, btn){
   fetch(FB_URL+'/teachers/'+fbKey+'.json',{method:'DELETE'}).catch(()=>{});
   localStorage.removeItem('teacherName_'+fbKey);
-  document.getElementById('resetNamePopup').classList.add('hidden');
+  // Satırı güncelle
+  const row = btn.closest('div[style]');
+  btn.remove();
+  row.querySelector('div > div:last-child').style.color = 'var(--muted)';
+  row.querySelector('div > div:last-child').textContent = '— boş —';
   showToast('✅ '+label+' ismi silindi');
 }
 
