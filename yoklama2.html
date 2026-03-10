@@ -367,7 +367,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
     <button class="btn btn-danger" onclick="confirmReset()">🗑</button>
     <button class="btn btn-green" onclick="markAllPresent()">✅ Tümünü İşaretle</button>
     <button class="btn btn-blue" onclick="openReport()">📊 Rapor</button>
-    <button class="btn btn-purple" onclick="exportPDF()">📄 Haftalık PDF</button>
+    <button class="btn btn-purple" id="pdfBtn" onclick="exportPDF()" style="display:none;">📄 Haftalık PDF</button>
   </div>
 </div>
 
@@ -661,6 +661,9 @@ function goScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classLis
 window.addEventListener('load',()=>{
   const saved=localStorage.getItem('teacherName')||'';
   if(saved) document.getElementById('teacherNameInput').value=saved;
+  // PDF butonu sadece PC'de görünsün
+  const isDesktop = window.innerWidth >= 768 && !/Mobi|Android/i.test(navigator.userAgent);
+  if(isDesktop) document.getElementById('pdfBtn').style.display='';
 });
 
 let selectedFloor = null;
