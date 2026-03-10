@@ -662,9 +662,9 @@ async function loadFromStorage(floor){
       attendanceHistory = data;
       attendance = attendanceHistory[currentTime]
         ? {...attendanceHistory[currentTime]}
-        : Object.fromEntries(FLOORS[floor].students.map(s=>[s.id,false]));
+        : Object.fromEntries(FLOORS[floor].students.map(s=>[String(s.id),false]));
     } else {
-      attendance = Object.fromEntries(FLOORS[floor].students.map(s=>[s.id,false]));
+      attendance = Object.fromEntries(FLOORS[floor].students.map(s=>[String(s.id),false]));
     }
     showSync('✅ Hazır');
     setTimeout(hideSync, 1500);
@@ -674,7 +674,7 @@ async function loadFromStorage(floor){
       const saved=localStorage.getItem('yoklama_f'+floor+'_'+todayKey);
       if(saved){
         attendanceHistory=JSON.parse(saved);
-        attendance=attendanceHistory[currentTime]?{...attendanceHistory[currentTime]}:Object.fromEntries(FLOORS[floor].students.map(s=>[s.id,false]));
+        attendance=attendanceHistory[currentTime]?{...attendanceHistory[currentTime]}:Object.fromEntries(FLOORS[floor].students.map(s=>[String(s.id),false]));
       }
     }catch(e2){}
     showSync('⚠️ Offline mod','#fb923c');
@@ -731,7 +731,9 @@ function selectFloor(floor){
 function confirmFloor(){
   const name=document.getElementById('katNameInput').value.trim();
   if(!name){showToast('⚠️ Lütfen adınızı girin');return;}
+  // Hem genel hem tarihe özel kaydet
   localStorage.setItem('teacherName_f'+selectedFloor, name);
+  localStorage.setItem('teacherName_f'+selectedFloor+'_'+todayKey, name);
   startApp(selectedFloor);
 }
 function checkPin(){
@@ -741,7 +743,7 @@ function checkPin(){
 
 async function startApp(floor){
   currentFloor=floor; students=FLOORS[floor].students;
-  attendance=Object.fromEntries(students.map(s=>[s.id,false]));
+  attendance=Object.fromEntries(students.map(s=>[String(s.id),false]));
   attendanceHistory={}; currentTime='Akşam';
   // Header
   document.getElementById('floorBadge').textContent=FLOORS[floor].label;
@@ -779,6 +781,7 @@ function isLocked(id){
 
 // ── TOGGLE ──
 function toggle(id){
+  id=String(id);
   if(isLocked(id)){showToast('🔒 Admin tarafından kodlandı');return;}
   const cur=attendance[id];
   attendance[id]=cur===true?false:true;
@@ -787,21 +790,19 @@ function toggle(id){
 
 async function setCode(id,code){
   if(!isAdmin)return;
+  id=String(id);
   const newVal = attendance[id]===code ? false : code;
 
-  // Önce cloud'daki güncel veriyi çek (başka vakit yoklamacı yapmış olabilir)
   showSync('⏫ Kaydediliyor...','#facc15');
   try{
     const cloudData = await loadFromCloud(currentFloor, todayKey);
     if(cloudData && Object.keys(cloudData).length>0){
-      // Cloud'dan gelen vakitleri koru, sadece bu id'yi güncelle
       TIMES.forEach(t=>{
         if(!attendanceHistory[t]) attendanceHistory[t] = cloudData[t] || {};
       });
     }
   }catch(e){}
 
-  // Tüm vakitlere kodu uygula
   TIMES.forEach(t=>{
     if(!attendanceHistory[t]) attendanceHistory[t]={};
     attendanceHistory[t][id]=newVal;
@@ -810,7 +811,6 @@ async function setCode(id,code){
 
   updateRow(id);updateStats();
 
-  // Hemen cloud'a yaz (debounce yok)
   try{
     await saveToCloud(currentFloor, todayKey, attendanceHistory);
     showSync('✅ Kaydedildi');
@@ -823,6 +823,7 @@ async function setCode(id,code){
 }
 
 function updateRow(id){
+  id=String(id);
   const st=attendance[id];
   const row=document.getElementById('row-'+id);
   const tick=document.getElementById('tick-'+id);
@@ -869,11 +870,11 @@ async function setTime(t){
         Object.assign(attendanceHistory, cloudData);
         attendance={...cloudData[t]};
       } else {
-        attendance=Object.fromEntries(students.map(s=>[s.id,false]));
+        attendance=Object.fromEntries(students.map(s=>[String(s.id),false]));
       }
       hideSync();
     }catch(e){
-      attendance=Object.fromEntries(students.map(s=>[s.id,false]));
+      attendance=Object.fromEntries(students.map(s=>[String(s.id),false]));
       hideSync();
     }
   }
@@ -1567,10 +1568,13 @@ async function _buildPDF() {
       doc.setDrawColor(0); doc.setLineWidth(0.4);
       doc.line(gx + 2, y + H_SIGN - 10, gx + gw - 2, y + H_SIGN - 10);
 
-      // Öğretmen adı varsa üste yaz
-      const tName = toASCII(localStorage.getItem('teacherName_f'+floor)||'');
+      // Öğretmen adı — o güne özel, yoksa genel
+      const tName = toASCII(
+        localStorage.getItem('teacherName_f'+floor+'_'+d.key) ||
+        localStorage.getItem('teacherName_f'+floor) || ''
+      );
       if(tName){
-        doc.setFontSize(4.8); doc.setFont('helvetica','bold'); doc.setTextColor(0);
+        doc.setFontSize(4.5); doc.setFont('helvetica','bold'); doc.setTextColor(0);
         doc.text(tName, gx + gw/2, y + 5, {align:'center'});
       }
 
