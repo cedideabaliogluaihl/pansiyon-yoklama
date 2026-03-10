@@ -273,6 +273,8 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
       <div class="login-title">YOKLAMA SİSTEMİ</div>
       <div class="login-sub">Belletmen Takip</div>
     </div>
+    <input id="teacherNameInput" type="text" placeholder="Adınız Soyadınız"
+      style="width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text);font-size:15px;font-family:'Noto Sans',sans-serif;box-sizing:border-box;margin-bottom:4px;">
     <div class="login-btns">
       <button class="login-btn btn-nobetci" onclick="goKatSec()">👮 Nöbetçi Girişi</button>
       <button class="login-btn btn-admin" onclick="goAdmin()">🔐 Admin Girişi</button>
@@ -639,12 +641,25 @@ async function getAllDataForFloor(floor){
 // ── NAV ──
 function goScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
 // ── SAYFA YÜKLENINCE ──
-window.addEventListener('load',()=>{});
+window.addEventListener('load',()=>{
+  const saved=localStorage.getItem('teacherName')||'';
+  if(saved) document.getElementById('teacherNameInput').value=saved;
+});
 
 let selectedFloor = null;
 
-function goKatSec(){ goScreen('screenKat'); }
+function goKatSec(){
+  const n=document.getElementById('teacherNameInput').value.trim();
+  if(!n){showToast('⚠️ Lütfen adınızı girin');return;}
+  localStorage.setItem('teacherName', n);
+  localStorage.setItem('teacherName_'+todayKey, n);
+  goScreen('screenKat');
+}
 function goAdmin(){
+  const n=document.getElementById('teacherNameInput').value.trim();
+  if(!n){showToast('⚠️ Lütfen adınızı girin');return;}
+  localStorage.setItem('teacherName', n);
+  localStorage.setItem('teacherName_'+todayKey, n);
   document.getElementById('pinInput').value='';
   document.getElementById('pinError').classList.add('hidden');
   goScreen('screenAdminPin');
@@ -1484,8 +1499,8 @@ async function _buildPDF() {
 
       // Öğretmen adı — localStorage'dan
       const tName = toASCII(
-        localStorage.getItem('teacherName_f'+floor+'_'+d.key) ||
-        localStorage.getItem('teacherName_f'+floor) || ''
+        localStorage.getItem('teacherName_'+d.key) ||
+        localStorage.getItem('teacherName') || ''
       );
       if(tName){
         doc.setFontSize(4.5); doc.setFont('helvetica','bold'); doc.setTextColor(0);
