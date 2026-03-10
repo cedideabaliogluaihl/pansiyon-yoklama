@@ -1537,22 +1537,11 @@ async function _buildPDF() {
       doc.setDrawColor(0); doc.setLineWidth(0.4);
       doc.line(gx + 2, y + H_SIGN - 10, gx + gw - 2, y + H_SIGN - 10);
 
-      // Öğretmen adı — önce localStorage, yoksa cloud'dan çek
-      let tName = toASCII(
+      // Öğretmen adı — localStorage'dan
+      const tName = toASCII(
         localStorage.getItem('teacherName_f'+floor+'_'+d.key) ||
         localStorage.getItem('teacherName_f'+floor) || ''
       );
-      if(!tName){
-        try{
-          const idx = await loadCloudIndex();
-          const metaKey = 'teacherName_f'+floor+'_'+d.key;
-          if(idx[metaKey]){
-            const res = await fetch(BIN_BASE+'/b/'+idx[metaKey]+'/latest',{headers:{'X-Master-Key':BIN_API_KEY},cache:'no-store'});
-            const j = await res.json();
-            if(j.record?.name) tName = toASCII(j.record.name);
-          }
-        }catch(e){}
-      }
       if(tName){
         doc.setFontSize(4.5); doc.setFont('helvetica','bold'); doc.setTextColor(0);
         doc.text(tName, gx + gw/2, y + 5, {align:'center'});
