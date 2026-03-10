@@ -286,6 +286,25 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
   </div>
 </div>
 
+<!-- ADMİN MENÜ -->
+<div class="screen" id="screenAdminMenu">
+  <div class="kat-wrap">
+    <div class="login-logo">🔐</div>
+    <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:var(--accent);text-align:center;margin-bottom:8px;">Admin Paneli</div>
+    <div class="kat-btns">
+      <button class="kat-btn" onclick="startAdminMain()">
+        <div class="kat-icon">🏠</div>
+        <div class="kat-info"><strong>Katlara Git</strong><span>Yoklama görüntüle / düzenle</span></div>
+      </button>
+      <button class="kat-btn" onclick="openAdminPanel()">
+        <div class="kat-icon">👥</div>
+        <div class="kat-info"><strong>Nöbetçi Ata</strong><span>Haftalık atama & öğretmen listesi</span></div>
+      </button>
+    </div>
+    <button class="back-btn" onclick="goScreen('screenLogin')">← Geri</button>
+  </div>
+</div>
+
 <!-- KAT SEÇİM -->
 <div class="screen" id="screenKat">
   <div class="kat-wrap">
@@ -373,8 +392,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
   <div class="bottom-bar">
     <button class="btn btn-danger" onclick="confirmReset()">🗑</button>
     <button class="btn btn-save" id="saveBtn" onclick="lockCurrentTime()">💾 Kaydet</button>
-    <button class="btn" id="adminKatBtn" style="display:none;background:var(--surface2);color:var(--text);border:1px solid var(--border);" onclick="goScreen('screenKat')">🏠 Katlar</button>
-    <button class="btn" id="adminAtaBtn" style="display:none;background:var(--surface2);color:var(--accent);border:1px solid var(--accent);" onclick="openAdminPanel()">👥 Nöbetçi Ata</button>
+    <button class="btn" id="adminMenuBtn" style="display:none;background:var(--surface2);color:var(--accent);border:1px solid var(--accent);" onclick="goScreen('screenAdminMenu')">☰ Menü</button>
     <button class="btn btn-blue" onclick="openReport()">📊 Rapor</button>
     <button class="btn btn-purple" id="pdfBtn" onclick="exportPDF()" style="display:none;">📄 Haftalık PDF</button>
   </div>
@@ -384,7 +402,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
 <div class="screen" id="screenAdminPanel">
   <div style="display:flex;flex-direction:column;height:100%;padding:16px;gap:12px;box-sizing:border-box;">
     <div style="display:flex;align-items:center;gap:10px;">
-      <button class="back-btn" style="margin:0;" onclick="goScreen('screenKat')">← Geri</button>
+      <button class="back-btn" style="margin:0;" onclick="isAdmin?goScreen('screenAdminMenu'):goScreen('screenKat')">← Geri</button>
       <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--accent);">🔐 Admin Paneli</div>
     </div>
     <!-- Sekmeler -->
@@ -741,22 +759,20 @@ function goAdmin(){
 function checkPin(){
   if(document.getElementById('pinInput').value===ADMIN_PIN){
     isAdmin=true;
-    // Admin direkt tüm öğrencileri görsün — 2. kattan başla
-    currentFloor=2; students=FLOORS[2].students;
-    window._activeKey = todayKey;
-    startAdminMain();
+    goScreen('screenAdminMenu');
   }
   else{document.getElementById('pinError').classList.remove('hidden');document.getElementById('pinInput').value='';}
 }
 
 async function startAdminMain(){
+  currentFloor=2; students=FLOORS[2].students;
+  window._activeKey = todayKey;
   attendance=Object.fromEntries(students.map(s=>[String(s.id),false]));
   attendanceHistory={}; currentTime='Akşam';
   document.getElementById('adminBadge').classList.remove('hidden');
   document.getElementById('resetNameBtn').style.display='none';
   document.getElementById('pdfBtn').style.display='';
-  document.getElementById('adminKatBtn').style.display='';
-  document.getElementById('adminAtaBtn').style.display='';
+  document.getElementById('adminMenuBtn').style.display='';
   document.getElementById('floorBadge').style.display='none';
   const fb = document.getElementById('adminFloorBtns');
   fb.style.display='flex'; fb.style.gap='4px';
