@@ -333,6 +333,10 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
         <div class="app-title">📋 Yoklama</div>
         <div class="floor-badge" id="floorBadge"></div>
         <div class="admin-badge hidden" id="adminBadge">ADMİN</div>
+        <div id="adminFloorBtns" style="display:none;gap:4px;display:none;">
+          <button onclick="adminSwitchFloor(2)" id="floorBtn2" style="padding:3px 8px;border-radius:6px;border:1.5px solid var(--accent);background:var(--accent);color:#000;font-size:11px;font-weight:700;cursor:pointer;font-family:Rajdhani,sans-serif;">Kat:2</button>
+          <button onclick="adminSwitchFloor(3)" id="floorBtn3" style="padding:3px 8px;border-radius:6px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text);font-size:11px;font-weight:700;cursor:pointer;font-family:Rajdhani,sans-serif;">Kat:3</button>
+        </div>
       </div>
       <div style="display:flex;align-items:center;gap:5px;">
         <div class="date-badge" id="currentDate"></div>
@@ -746,17 +750,17 @@ function checkPin(){
 async function startAdminMain(){
   attendance=Object.fromEntries(students.map(s=>[String(s.id),false]));
   attendanceHistory={}; currentTime='Akşam';
-  document.getElementById('floorBadge').textContent=FLOORS[2].label;
   document.getElementById('adminBadge').classList.remove('hidden');
   document.getElementById('resetNameBtn').style.display='';
   document.getElementById('pdfBtn').style.display='';
+  document.getElementById('floorBadge').style.display='none';
+  const fb = document.getElementById('adminFloorBtns');
+  fb.style.display='flex'; fb.style.gap='4px';
+  updateFloorBtns(2);
   document.getElementById('currentDate').textContent=today.toLocaleDateString('tr-TR',{weekday:'short',day:'2-digit',month:'2-digit'});
   const roomSel=document.getElementById('roomFilter');
   roomSel.innerHTML='<option value="">Tüm</option>';
   FLOORS[2].rooms.forEach(r=>{const o=document.createElement('option');o.value=r;o.textContent=r;roomSel.appendChild(o);});
-  // Kat değiştirme butonu ekle
-  document.getElementById('floorBadge').style.cursor='pointer';
-  document.getElementById('floorBadge').onclick=()=>adminToggleFloor();
   document.querySelectorAll('.time-btn').forEach(b=>b.classList.toggle('active', b.getAttribute('data-time')==='Akşam'));
   filterText='';filterRoomVal='';
   goScreen('screenMain');
@@ -764,21 +768,29 @@ async function startAdminMain(){
   renderAll();updateStats();updateSaveBtn();
 }
 
-async function adminToggleFloor(){
-  const newFloor = currentFloor===2 ? 3 : 2;
-  currentFloor=newFloor; students=FLOORS[newFloor].students;
+function updateFloorBtns(active){
+  [2,3].forEach(f=>{
+    const btn = document.getElementById('floorBtn'+f);
+    if(!btn) return;
+    btn.style.background = f===active ? 'var(--accent)' : 'var(--surface2)';
+    btn.style.color = f===active ? '#000' : 'var(--text)';
+    btn.style.border = f===active ? '1.5px solid var(--accent)' : '1.5px solid var(--border)';
+  });
+}
+
+async function adminSwitchFloor(floor){
+  currentFloor=floor; students=FLOORS[floor].students;
   window._activeKey = todayKey;
   attendance=Object.fromEntries(students.map(s=>[String(s.id),false]));
   attendanceHistory={}; currentTime='Akşam';
-  document.getElementById('floorBadge').textContent=FLOORS[newFloor].label;
+  updateFloorBtns(floor);
   const roomSel=document.getElementById('roomFilter');
   roomSel.innerHTML='<option value="">Tüm</option>';
-  FLOORS[newFloor].rooms.forEach(r=>{const o=document.createElement('option');o.value=r;o.textContent=r;roomSel.appendChild(o);});
+  FLOORS[floor].rooms.forEach(r=>{const o=document.createElement('option');o.value=r;o.textContent=r;roomSel.appendChild(o);});
   document.querySelectorAll('.time-btn').forEach(b=>b.classList.toggle('active', b.getAttribute('data-time')==='Akşam'));
   filterText='';filterRoomVal='';
-  await loadFromStorage(newFloor);
+  await loadFromStorage(floor);
   renderAll();updateStats();updateSaveBtn();
-  showToast('📋 '+FLOORS[newFloor].label+' gösteriliyor');
 }
 
 
@@ -990,9 +1002,9 @@ async function renderAtama(){
       row.style.cssText='display:flex;align-items:center;gap:8px;';
       row.innerHTML=`
         <span style="font-size:12px;color:var(--muted);min-width:40px;">${floor}. Kat</span>
-        <select data-date="${d.key}" data-floor="${floor}" style="flex:1;padding:6px 8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:12px;font-family:Noto Sans,sans-serif;">
+        <select data-date="${d.key}" data-floor="${floor}" style="flex:1;padding:6px 8px;border-radius:8px;border:${assigned?'2px solid #4ade80':'1px solid var(--border)'};background:var(--surface);color:${assigned?'#4ade80':'var(--text)'};font-size:12px;font-family:Noto Sans,sans-serif;font-weight:${assigned?'700':'400'};">
           <option value="">— Atanmadı —</option>
-          ${teacherList.map(t=>`<option value="${t}" ${t===assigned?'selected':''}>${t}${t===assigned&&hasPin?' 🔑':''}</option>`).join('')}
+          ${teacherList.map(t=>`<option value="${t}" ${t===assigned?'selected':''}>${t===assigned?'✓ '+t:t}</option>`).join('')}
         </select>
         <button onclick="applyAtama(this)" style="padding:6px 10px;border-radius:8px;border:none;background:var(--accent);color:#000;font-weight:700;font-size:12px;cursor:pointer;">✓</button>
       `;
@@ -1833,7 +1845,7 @@ async function _buildPDF() {
         // Oda no — sadece ilk satırda, ortada
         if (si === 0) {
           doc.setFontSize(4.8); doc.setFont('helvetica','bold'); doc.setTextColor(0);
-          doc.text(room, X_ODA + W_ODA/2, ry + rs.length * ROW_H * 0.65, {align:'center'});
+          doc.text(String(room), X_ODA + W_ODA/2, ty, {align:'center'});
         }
 
         // Sınıf
