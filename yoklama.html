@@ -284,18 +284,12 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
 <div class="screen" id="screenKat">
   <div class="kat-wrap">
     <div class="kat-title">Hangi kattasın?</div>
-    <div id="katNameArea" style="width:100%;margin-bottom:8px;display:none;">
-      <input id="katNameInput" type="text" placeholder="Adınız Soyadınız"
-        style="width:100%;padding:10px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text);font-size:14px;font-family:'Noto Sans',sans-serif;box-sizing:border-box;"
-        onkeydown="if(event.key==='Enter')confirmFloor()">
-      <button class="pin-submit" style="margin-top:8px;width:100%;" onclick="confirmFloor()">Giriş Yap →</button>
-    </div>
-    <div class="kat-btns" id="katBtns">
-      <button class="kat-btn" onclick="selectFloor(2)">
+    <div class="kat-btns">
+      <button class="kat-btn" onclick="startApp(2)">
         <div class="kat-icon">2️⃣</div>
         <div class="kat-info"><strong>2. Kat</strong><span>Oda 201 – 216</span></div>
       </button>
-      <button class="kat-btn" onclick="selectFloor(3)">
+      <button class="kat-btn" onclick="startApp(3)">
         <div class="kat-icon">3️⃣</div>
         <div class="kat-info"><strong>3. Kat</strong><span>Oda 301 – 316</span></div>
       </button>
@@ -704,48 +698,17 @@ window.addEventListener('load',()=>{});
 
 let selectedFloor = null;
 
-function goKatSec(){ goScreen('screenKat'); resetKatScreen(); }
+function goKatSec(){ goScreen('screenKat'); }
 function goAdmin(){
   document.getElementById('pinInput').value='';
   document.getElementById('pinError').classList.add('hidden');
   goScreen('screenAdminPin');
 }
-
-function resetKatScreen(){
-  selectedFloor=null;
-  document.getElementById('katBtns').style.display='';
-  document.getElementById('katNameArea').style.display='none';
-  document.getElementById('katNameInput').value='';
-}
-
-function selectFloor(floor){
-  selectedFloor=floor;
-  const saved=localStorage.getItem('teacherName_f'+floor)||'';
-  document.getElementById('katNameInput').value=saved;
-  document.getElementById('katBtns').style.display='none';
-  document.getElementById('katNameArea').style.display='';
-}
-
-function confirmFloor(){
-  const name=document.getElementById('katNameInput').value.trim();
-  if(!name){showToast('⚠️ Lütfen adınızı girin');return;}
-  localStorage.setItem('teacherName_f'+selectedFloor, name);
-  localStorage.setItem('teacherName_f'+selectedFloor+'_'+todayKey, name);
-  // Cloud'a da kaydet (diğer cihazlar PDF'de görsün)
-  const key = 'teacherName_f'+selectedFloor+'_'+todayKey;
-  saveToCloud('meta', key, {name}).catch(()=>{});
-  startApp(selectedFloor);
-}
 function checkPin(){
-  if(document.getElementById('pinInput').value===ADMIN_PIN){
-    isAdmin=true;
-    goScreen('screenKat');
-    resetKatScreen();
-  } else {
-    document.getElementById('pinError').classList.remove('hidden');
-    document.getElementById('pinInput').value='';
-  }
+  if(document.getElementById('pinInput').value===ADMIN_PIN){isAdmin=true;goScreen('screenKat');}
+  else{document.getElementById('pinError').classList.remove('hidden');document.getElementById('pinInput').value='';}
 }
+
 
 async function startApp(floor){
   currentFloor=floor; students=FLOORS[floor].students;
