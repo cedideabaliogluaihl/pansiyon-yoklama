@@ -1731,10 +1731,13 @@ async function saveIzin(){
 
 function applyIzinlerToAttendance(){
   const activeDate = (window._activeKey||todayKey).replace(/_/g,'-');
+  const todayStr = new Date().toISOString().split('T')[0];
+  const now = new Date();
+  const nowTime = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+
   students.forEach(s=>{
     const id = String(s.id);
-    const list = _izinler[id] || [];
-    const activeIzin = list.find(iz => iz.baslangic <= activeDate && iz.bitis >= activeDate);
+    const activeIzin = getActiveIzin(s.id); // saat kontrolü dahil
     if(activeIzin){
       TIMES.forEach(t=>{
         if(!attendanceHistory[t]) attendanceHistory[t]={};
@@ -1742,7 +1745,7 @@ function applyIzinlerToAttendance(){
       });
       attendance[id] = activeIzin.kod;
     } else {
-      // İzin yoksa veya silindiyse kodu temizle
+      // İzin bitti veya yok — kodu temizle
       const cur = attendance[id];
       if(typeof cur === 'string'){
         TIMES.forEach(t=>{
@@ -1757,6 +1760,18 @@ function applyIzinlerToAttendance(){
   saveToCloud(currentFloor, window._activeKey||todayKey, attendanceHistory).catch(()=>{});
   try{ localStorage.setItem('yoklama_f'+currentFloor+'_'+(window._activeKey||todayKey), JSON.stringify(attendanceHistory)); }catch(e){}
 }
+
+// Süreli izinler için her dakika kontrol et
+setInterval(()=>{
+  const hasSaatliIzin = Object.values(_izinler).some(list =>
+    list.some(iz => iz.saatBitis)
+  );
+  if(hasSaatliIzin && currentFloor){
+    applyIzinlerToAttendance();
+    renderAll();
+    updateStats();
+  }
+}, 60000);
 
 function updateRow(id){
   id=String(id);
@@ -1892,7 +1907,7 @@ function renderAll(){
       html+=`<div class="${rowCls}" id="row-${s.id}" onclick="${isAdmin?'':('toggle('+s.id+')')}">
         <div class="student-info">
           <div class="student-name">${s.name}</div>
-          <div class="student-meta">${s.cls} • Oda ${s.room}</div>
+          <div class="student-meta">${s.cls} • Oda ${s.room}${!isAdmin && activeIzin && activeIzin.saatBitis ? ` <span style="color:var(--accent);font-size:10px;">⏰ ${activeIzin.saatBitis}'a kadar izinli</span>` : ''}</div>
         </div>
         <div class="status-area" style="display:flex;align-items:center;gap:6px;">${adminHtml}${nobetciIzin}${tickHtml}</div>
       </div>`;
