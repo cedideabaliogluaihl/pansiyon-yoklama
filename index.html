@@ -357,6 +357,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
       </div>
       <div style="display:flex;align-items:center;gap:5px;">
         <div class="date-badge" id="currentDate"></div>
+        <button onclick="refreshData()" title="Yenile" style="padding:4px 8px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--accent);font-size:14px;cursor:pointer;line-height:1;" id="refreshBtn">🔄</button>
         <button class="logout-btn" id="resetNameBtn" style="display:none;background:var(--surface2);color:var(--accent);border:1px solid var(--accent);" onclick="openAdminPanel()">⚙️</button>
         <button class="logout-btn" onclick="logout()">Çıkış</button>
       </div>
@@ -1350,36 +1351,18 @@ function changeStudentRoom(id, newRoom){
   showToast('✅ Oda → '+newRoom);
 }
 
-async function resetAllIzinler(){
-  if(!confirm('Tüm izin/kod kayıtları ve bu haftaki yoklama kodları silinecek. Emin misiniz?')) return;
-  // Firebase izinleri sil
-  _izinler = {};
-  await fetch(FB_URL+'/izinler.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({})}).catch(()=>{});
-
-  // Bu haftanın tüm yoklama verilerindeki string kodları temizle
-  const weekDates = getWeekDates();
-  for(const d of weekDates){
-    for(const floor of [2,3]){
-      const key = 'f'+floor+'_'+d.key;
-      try{
-        const r = await fetch(FB_URL+'/yoklama/'+key+'.json?'+Date.now(),{cache:'no-store'});
-        const data = await r.json();
-        if(data){
-          let changed = false;
-          TIMES.forEach(t=>{
-            if(data[t]) Object.keys(data[t]).forEach(id=>{
-              if(typeof data[t][id]==='string'){ data[t][id]=false; changed=true; }
-            });
-          });
-          if(changed) await fetch(FB_URL+'/yoklama/'+key+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).catch(()=>{});
-        }
-      }catch(e){}
-    }
-  }
-  // Aktif sayfayı yenile
-  await loadFromStorage(currentFloor);
-  renderAll(); updateStats();
-  showToast('✅ Tüm izin/kodlar temizlendi');
+async function refreshData(){
+  const btn = document.getElementById('refreshBtn');
+  if(btn){ btn.textContent='⏳'; btn.disabled=true; }
+  try{
+    await loadIzinler();
+    await loadFloorsFromCloud();
+    students = FLOORS[currentFloor].students;
+    await loadFromStorage(currentFloor);
+    renderAll(); updateStats();
+    showToast('✅ Yenilendi');
+  }catch(e){ showToast('⚠️ Yenileme başarısız'); }
+  if(btn){ btn.textContent='🔄'; btn.disabled=false; }
 }
 
 function deleteStudent(id){
@@ -1762,7 +1745,7 @@ function applyIzinlerToAttendance(){
 }
 
 // Süreli izinler için her dakika kontrol et
-setInterval(()=>{
+setInterval(async ()=>{
   const hasSaatliIzin = Object.values(_izinler).some(list =>
     list.some(iz => iz.saatBitis)
   );
