@@ -387,7 +387,6 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
   <div class="bottom-bar">
     <button class="btn btn-danger" onclick="confirmReset()">🗑</button>
     <button class="btn btn-save" id="saveBtn" onclick="lockCurrentTime()">💾 Kaydet</button>
-    <button class="btn" id="adminMenuBtn" style="display:none;background:var(--surface2);color:var(--accent);border:1px solid var(--accent);" onclick="goScreen('screenAdminMenu')">☰ Menü</button>
     <button class="btn btn-blue" onclick="openReport()">📊 Rapor</button>
     <button class="btn btn-purple" id="pdfBtn" onclick="exportPDF()" style="display:none;">📄 Haftalık PDF</button>
   </div>
@@ -765,7 +764,7 @@ async function startAdminMain(){
   document.getElementById('adminBadge').classList.remove('hidden');
   document.getElementById('resetNameBtn').style.display='none';
   document.getElementById('pdfBtn').style.display='';
-  document.getElementById('adminMenuBtn').style.display='';
+
   document.getElementById('floorBadge').style.display='none';
   const fb = document.getElementById('adminFloorBtns');
   fb.style.display='flex'; fb.style.gap='4px';
