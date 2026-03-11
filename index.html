@@ -427,6 +427,8 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
         <button id="ogrKat2" onclick="switchOgrKat(2)" style="flex:1;padding:8px;border-radius:8px;border:none;font-weight:700;font-size:13px;cursor:pointer;background:var(--accent);color:#000;">2. Kat</button>
         <button id="ogrKat3" onclick="switchOgrKat(3)" style="flex:1;padding:8px;border-radius:8px;border:none;font-weight:700;font-size:13px;cursor:pointer;background:var(--surface2);color:var(--text);">3. Kat</button>
       </div>
+      <!-- Tüm izinleri temizle -->
+      <button onclick="resetAllIzinler()" style="padding:10px;border-radius:8px;border:1.5px solid #dc2626;background:rgba(220,38,38,0.1);color:#dc2626;font-size:12px;font-weight:700;cursor:pointer;">🗑 Tüm İzin/Kodları Sıfırla (Eski Veriler)</button>
       <!-- Öğrenci ekle -->
       <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;">
         <div style="font-size:12px;color:var(--accent);font-weight:700;">➕ Yeni Öğrenci</div>
@@ -782,6 +784,29 @@ async function loadFromStorage(floor){
     }
     showSync('✅ Hazır');
     setTimeout(hideSync, 1500);
+    // Eski sistemden kalan string kodları temizle (izin sistemi yokken girilmiş)
+    // Sadece _izinler'de kaydı olmayan öğrencilerin kodlarını sil
+    let changed = false;
+    TIMES.forEach(t=>{
+      if(!attendanceHistory[t]) return;
+      Object.keys(attendanceHistory[t]).forEach(id=>{
+        const val = attendanceHistory[t][id];
+        if(typeof val === 'string'){
+          const activeIzin = getActiveIzin(id);
+          if(!activeIzin){
+            attendanceHistory[t][id] = false;
+            changed = true;
+          }
+        }
+      });
+    });
+    if(changed){
+      // attendance'ı da güncelle
+      const def = Object.fromEntries(FLOORS[floor].students.map(s=>[String(s.id),false]));
+      attendance = {...def, ...attendanceHistory[currentTime]};
+      saveToCloud(floor, window._activeKey||todayKey, attendanceHistory).catch(()=>{});
+      try{ localStorage.setItem('yoklama_f'+floor+'_'+(window._activeKey||todayKey), JSON.stringify(attendanceHistory)); }catch(e){}
+    }
     applyIzinlerToAttendance();
   }catch(e){
     // Offline fallback
@@ -1141,9 +1166,39 @@ function changeStudentRoom(id, newRoom){
   showToast('✅ Oda → '+newRoom);
 }
 
+async function resetAllIzinler(){
+  if(!confirm('Tüm izin/kod kayıtları ve bu haftaki yoklama kodları silinecek. Emin misiniz?')) return;
+  // Firebase izinleri sil
+  _izinler = {};
+  await fetch(FB_URL+'/izinler.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({})}).catch(()=>{});
+
+  // Bu haftanın tüm yoklama verilerindeki string kodları temizle
+  const weekDates = getWeekDates();
+  for(const d of weekDates){
+    for(const floor of [2,3]){
+      const key = 'f'+floor+'_'+d.key;
+      try{
+        const r = await fetch(FB_URL+'/yoklama/'+key+'.json?'+Date.now(),{cache:'no-store'});
+        const data = await r.json();
+        if(data){
+          let changed = false;
+          TIMES.forEach(t=>{
+            if(data[t]) Object.keys(data[t]).forEach(id=>{
+              if(typeof data[t][id]==='string'){ data[t][id]=false; changed=true; }
+            });
+          });
+          if(changed) await fetch(FB_URL+'/yoklama/'+key+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)}).catch(()=>{});
+        }
+      }catch(e){}
+    }
+  }
+  // Aktif sayfayı yenile
+  await loadFromStorage(currentFloor);
+  renderAll(); updateStats();
+  showToast('✅ Tüm izin/kodlar temizlendi');
+}
+
 function deleteStudent(id){
-  const floor = FLOORS[_ogrKatSec];
-  const idx = floor.students.findIndex(s=>s.id===id);
   if(idx===-1) return;
   const name = floor.students[idx].name;
   floor.students.splice(idx,1);
