@@ -1418,7 +1418,11 @@ function updateStats(){
   document.getElementById('statCoded').textContent=coded;
   const pct=Math.round((present+coded)/total*100);
   document.getElementById('progressBar').style.width=pct+'%';
-  document.getElementById('progressText').textContent=`${present} mevcut • ${coded} kodlu • ${absent} yok`;
+  const izinSay=getVisible().filter(s=>attendance[String(s.id)]==='I').length;
+  const raporSay=getVisible().filter(s=>attendance[String(s.id)]==='R').length;
+  const evciSay=getVisible().filter(s=>attendance[String(s.id)]==='E').length;
+  const kodStr2 = [izinSay?'🏠'+izinSay:'', raporSay?'🏥'+raporSay:'', evciSay?'🌙'+evciSay:''].filter(Boolean).join(' ');
+  document.getElementById('progressText').textContent=`${present} mevcut${kodStr2?' • '+kodStr2:''} • ${absent} yok`;
 }
 
 // ── FILTER ──
@@ -1437,7 +1441,12 @@ function renderAll(){
     const rs=visible.filter(s=>s.room===room);
     const pres=rs.filter(s=>attendance[String(s.id)]===true).length;
     const cod=rs.filter(s=>typeof attendance[String(s.id)]==='string').length;
-    html+=`<div class="room-header"><div class="room-badge">ODA ${room}</div><div class="room-divider"></div><div class="room-count">${pres} mevcut${cod?` • ${cod} kodlu`:''}</div>${!isAdmin?`<button onclick="markRoomPresent(${room})" style="margin-left:auto;padding:3px 8px;border-radius:6px;border:none;background:var(--present);color:#000;font-size:11px;font-weight:700;cursor:pointer;">✅ Odayı İşaretle</button>`:''}</div>`;
+    const izin=rs.filter(s=>attendance[String(s.id)]==='I').length;
+    const rapor=rs.filter(s=>attendance[String(s.id)]==='R').length;
+    const evci=rs.filter(s=>attendance[String(s.id)]==='E').length;
+    const toplamKod=izin+rapor+evci;
+    const kodStr = toplamKod ? ` • ${izin?'🏠'+izin+' ':''} ${rapor?'🏥'+rapor+' ':''}${evci?'🌙'+evci:''}`.trim() : '';
+    html+=`<div class="room-header"><div class="room-badge">ODA ${room}</div><div class="room-divider"></div><div class="room-count">${pres} mevcut${kodStr}</div>${!isAdmin?`<button onclick="markRoomPresent(${room})" style="margin-left:auto;padding:3px 8px;border-radius:6px;border:none;background:var(--present);color:#000;font-size:11px;font-weight:700;cursor:pointer;">✅ Odayı İşaretle</button>`:''}</div>`;
     rs.forEach(s=>{
       const st=attendance[String(s.id)];
       let rowCls='student-row';
