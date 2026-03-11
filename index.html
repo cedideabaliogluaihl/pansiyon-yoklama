@@ -402,10 +402,11 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
       <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--accent);">🔐 Admin Paneli</div>
     </div>
     <!-- Sekmeler -->
-    <div style="display:flex;gap:6px;">
-      <button id="tabAtama" onclick="switchAdminTab('atama')" style="flex:1;padding:8px;border-radius:8px;border:none;font-family:Rajdhani,sans-serif;font-weight:700;font-size:12px;cursor:pointer;background:var(--accent);color:#000;">📅 Nöbet</button>
-      <button id="tabListe" onclick="switchAdminTab('liste')" style="flex:1;padding:8px;border-radius:8px;border:none;font-family:Rajdhani,sans-serif;font-weight:700;font-size:12px;cursor:pointer;background:var(--surface2);color:var(--text);">👥 Öğretmen</button>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      <button id="tabAtama"   onclick="switchAdminTab('atama')"   style="flex:1;padding:8px;border-radius:8px;border:none;font-family:Rajdhani,sans-serif;font-weight:700;font-size:12px;cursor:pointer;background:var(--accent);color:#000;">📅 Nöbet</button>
+      <button id="tabListe"   onclick="switchAdminTab('liste')"   style="flex:1;padding:8px;border-radius:8px;border:none;font-family:Rajdhani,sans-serif;font-weight:700;font-size:12px;cursor:pointer;background:var(--surface2);color:var(--text);">👥 Öğretmen</button>
       <button id="tabOgrenci" onclick="switchAdminTab('ogrenci')" style="flex:1;padding:8px;border-radius:8px;border:none;font-family:Rajdhani,sans-serif;font-weight:700;font-size:12px;cursor:pointer;background:var(--surface2);color:var(--text);">🎓 Öğrenci</button>
+      <button id="tabIzin"    onclick="switchAdminTab('izin')"    style="flex:1;padding:8px;border-radius:8px;border:none;font-family:Rajdhani,sans-serif;font-weight:700;font-size:12px;cursor:pointer;background:var(--surface2);color:var(--text);">📋 İzinler</button>
     </div>
     <!-- NÖBET ATAMA SEKMESİ -->
     <div id="panelAtama" style="display:flex;flex-direction:column;gap:8px;overflow-y:auto;flex:1;">
@@ -444,6 +445,48 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
       </div>
       <!-- Öğrenci listesi (oda değiştir / sil) -->
       <div id="ogrenciListPanel" style="display:flex;flex-direction:column;gap:6px;overflow-y:auto;"></div>
+    </div>
+
+    <!-- İZİNLER SEKMESİ -->
+    <div id="panelIzin" style="display:none;flex-direction:column;gap:10px;flex:1;overflow:hidden;">
+      <!-- Arama -->
+      <div style="display:flex;gap:6px;">
+        <div style="display:flex;gap:4px;">
+          <button id="izinKat2" onclick="switchIzinKat(2)" style="padding:8px 14px;border-radius:8px;border:none;font-weight:700;font-size:12px;cursor:pointer;background:var(--accent);color:#000;">2. Kat</button>
+          <button id="izinKat3" onclick="switchIzinKat(3)" style="padding:8px 14px;border-radius:8px;border:none;font-weight:700;font-size:12px;cursor:pointer;background:var(--surface2);color:var(--text);">3. Kat</button>
+        </div>
+        <input id="izinOdaInput" type="number" placeholder="Oda no..." oninput="renderIzinPanel()"
+          style="flex:1;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;">
+      </div>
+      <!-- Öğrenci + izin listesi -->
+      <div id="izinPanelList" style="display:flex;flex-direction:column;gap:8px;overflow-y:auto;flex:1;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- İZİN EKLE MİNİ MODAL (panel içi) -->
+<div class="modal-overlay hidden" id="izinEkleModal" style="z-index:2000;">
+  <div class="modal-sheet" style="max-width:340px;margin:auto;padding:20px;">
+    <div style="font-size:15px;font-weight:700;color:var(--accent);margin-bottom:12px;">📋 İzin Ekle — <span id="izinEkleAd"></span></div>
+    <!-- Kod seçimi -->
+    <div style="display:flex;gap:8px;margin-bottom:12px;">
+      <button onclick="selectIzinKodPanel('I')" id="btnKodI" style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:#000;font-weight:700;font-size:13px;cursor:pointer;">🏠 İzin</button>
+      <button onclick="selectIzinKodPanel('R')" id="btnKodR" style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--border);background:var(--surface2);color:var(--text);font-weight:700;font-size:13px;cursor:pointer;">🏥 Rapor</button>
+      <button onclick="selectIzinKodPanel('E')" id="btnKodE" style="flex:1;padding:10px;border-radius:8px;border:2px solid var(--border);background:var(--surface2);color:var(--text);font-weight:700;font-size:13px;cursor:pointer;">🌙 Evci</button>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:14px;">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:12px;color:var(--muted);width:60px;">Başlangıç</span>
+        <input type="date" id="izinEkleBaslangic" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;">
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span style="font-size:12px;color:var(--muted);width:60px;">Bitiş</span>
+        <input type="date" id="izinEkleBitis" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;">
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="saveIzinPanel()" style="flex:1;padding:11px;border-radius:8px;border:none;background:var(--accent);color:#000;font-weight:700;font-size:13px;cursor:pointer;">✅ Kaydet</button>
+      <button onclick="document.getElementById('izinEkleModal').classList.add('hidden')" style="flex:1;padding:11px;border-radius:8px;border:none;background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;">İptal</button>
     </div>
   </div>
 </div>
@@ -1092,16 +1135,147 @@ async function clearAssignment(dateKey, floor){
 }
 
 let _ogrKatSec = 2;
+let _izinKatSec = 2;
+let _izinPanelId = null;
+let _izinPanelKod = 'I';
 
 function switchAdminTab(tab){
-  ['atama','liste','ogrenci'].forEach(t=>{
-    document.getElementById('panel'+t.charAt(0).toUpperCase()+t.slice(1)).style.display = t===tab?'flex':'none';
+  ['atama','liste','ogrenci','izin'].forEach(t=>{
+    const panelId = 'panel'+t.charAt(0).toUpperCase()+t.slice(1);
+    const panel = document.getElementById(panelId);
+    if(panel) panel.style.display = t===tab?'flex':'none';
     const btn = document.getElementById('tab'+t.charAt(0).toUpperCase()+t.slice(1));
     if(btn){ btn.style.background = t===tab?'var(--accent)':'var(--surface2)'; btn.style.color = t===tab?'#000':'var(--text)'; }
   });
   if(tab==='liste') renderTeacherList();
   if(tab==='atama') renderAtama();
   if(tab==='ogrenci'){ _ogrKatSec=2; switchOgrKat(2); }
+  if(tab==='izin'){ _izinKatSec=2; switchIzinKat(2); }
+}
+
+function switchIzinKat(kat){
+  _izinKatSec = kat;
+  [2,3].forEach(k=>{
+    const btn = document.getElementById('izinKat'+k);
+    if(btn){ btn.style.background = k===kat?'var(--accent)':'var(--surface2)'; btn.style.color = k===kat?'#000':'var(--text)'; }
+  });
+  document.getElementById('izinOdaInput').value = '';
+  renderIzinPanel();
+}
+
+function renderIzinPanel(){
+  const container = document.getElementById('izinPanelList');
+  const odaVal = document.getElementById('izinOdaInput').value.trim();
+  const floor = FLOORS[_izinKatSec];
+
+  let filtered = floor.students;
+  if(odaVal) filtered = filtered.filter(s => String(s.room).startsWith(odaVal));
+
+  if(!filtered.length){
+    container.innerHTML = `<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">Oda bulunamadı</div>`;
+    return;
+  }
+
+  // Odaya göre grupla
+  const rooms = [...new Set(filtered.map(s=>s.room))].sort((a,b)=>parseInt(a)-parseInt(b));
+  let html = '';
+  rooms.forEach(room=>{
+    html += `<div style="font-size:11px;font-weight:700;color:var(--accent);padding:4px 2px 2px;">ODA ${room}</div>`;
+    filtered.filter(s=>s.room===room).forEach(s=>{
+      const izinList = _izinler[String(s.id)] || [];
+      const activeIzin = getActiveIzin(s.id);
+      const badge = activeIzin
+        ? `<span style="font-size:11px;padding:2px 8px;border-radius:12px;background:${activeIzin.kod==='I'?'rgba(14,165,233,0.2)':activeIzin.kod==='R'?'rgba(239,68,68,0.2)':'rgba(139,92,246,0.2)'};color:${activeIzin.kod==='I'?'#0ea5e9':activeIzin.kod==='R'?'#ef4444':'#8b5cf6'};">${activeIzin.kod==='I'?'🏠 İzin':activeIzin.kod==='R'?'🏥 Rapor':'🌙 Evci'} • ${activeIzin.bitis}</span>`
+        : '';
+      html += `
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:4px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
+            <div style="flex:1;">
+              <div style="font-size:13px;font-weight:700;color:var(--text);">${s.name}</div>
+              <div style="font-size:10px;color:var(--muted);">${s.cls} • Oda ${s.room}</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              ${badge}
+              <button onclick="openIzinEkle(${s.id})" style="padding:5px 10px;border-radius:7px;border:1.5px solid var(--accent);background:transparent;color:var(--accent);font-size:11px;font-weight:700;cursor:pointer;">+ İzin</button>
+            </div>
+          </div>
+          ${izinList.length ? `
+          <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px;">
+            ${izinList.map((iz,i)=>`
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;border-radius:7px;background:var(--surface);font-size:11px;">
+                <span>${iz.kod==='I'?'🏠':iz.kod==='R'?'🏥':'🌙'} <b>${iz.kod==='I'?'İzin':iz.kod==='R'?'Rapor':'Evci'}</b> — ${iz.baslangic} → ${iz.bitis}</span>
+                <button onclick="deleteIzinPanel('${s.id}',${i})" style="padding:2px 7px;border-radius:5px;border:none;background:#dc2626;color:#fff;font-size:10px;cursor:pointer;">🗑</button>
+              </div>`).join('')}
+          </div>` : ''}
+        </div>`;
+    });
+  });
+  container.innerHTML = html;
+}
+
+function openIzinEkle(studentId){
+  _izinPanelId = String(studentId);
+  _izinPanelKod = 'I';
+  const s = FLOORS[_izinKatSec].students.find(s=>String(s.id)===_izinPanelId)
+         || FLOORS[2].students.find(s=>String(s.id)===_izinPanelId)
+         || FLOORS[3].students.find(s=>String(s.id)===_izinPanelId);
+  document.getElementById('izinEkleAd').textContent = s ? s.name : '';
+  // Bugünü varsayılan yap
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('izinEkleBaslangic').value = today;
+  document.getElementById('izinEkleBitis').value = today;
+  selectIzinKodPanel('I');
+  document.getElementById('izinEkleModal').classList.remove('hidden');
+}
+
+function selectIzinKodPanel(kod){
+  _izinPanelKod = kod;
+  ['I','R','E'].forEach(k=>{
+    const btn = document.getElementById('btnKod'+k);
+    if(!btn) return;
+    const active = k===kod;
+    const colors = {I:'var(--accent)',R:'#ef4444',E:'#8b5cf6'};
+    btn.style.background = active ? colors[k] : 'var(--surface2)';
+    btn.style.borderColor = active ? colors[k] : 'var(--border)';
+    btn.style.color = active ? '#000' : 'var(--text)';
+  });
+}
+
+async function saveIzinPanel(){
+  const bas = document.getElementById('izinEkleBaslangic').value;
+  const bit = document.getElementById('izinEkleBitis').value;
+  if(!bas||!bit){ showToast('⚠️ Tarih seçin'); return; }
+  if(bas>bit){ showToast('⚠️ Başlangıç bitişten büyük olamaz'); return; }
+  const id = _izinPanelId;
+  if(!_izinler[id]) _izinler[id] = [];
+  _izinler[id].push({kod:_izinPanelKod, baslangic:bas, bitis:bit});
+  await saveIzinlerToCloud();
+  document.getElementById('izinEkleModal').classList.add('hidden');
+  applyIzinlerToAttendance();
+  renderIzinPanel();
+  showToast('✅ İzin kaydedildi');
+}
+
+async function deleteIzinPanel(studentId, idx){
+  const id = String(studentId);
+  if(!_izinler[id] || !_izinler[id][idx]) return;
+  _izinler[id].splice(idx,1);
+  if(!_izinler[id].length) delete _izinler[id];
+  await saveIzinlerToCloud();
+
+  // Yoklama kodlarını temizle
+  TIMES.forEach(t=>{
+    if(!attendanceHistory[t]) attendanceHistory[t]={};
+    attendanceHistory[t][id] = false;
+  });
+  attendance[id] = false;
+  const activeKey = window._activeKey||todayKey;
+  saveToCloud(currentFloor, activeKey, attendanceHistory).catch(()=>{});
+  try{ localStorage.setItem('yoklama_f'+currentFloor+'_'+activeKey, JSON.stringify(attendanceHistory)); }catch(e){}
+
+  applyIzinlerToAttendance();
+  renderIzinPanel();
+  showToast('🗑 İzin silindi');
 }
 
 function switchOgrKat(kat){
@@ -1673,15 +1847,13 @@ function renderAll(){
       // Aktif izin varsa badge göster
       const activeIzin = getActiveIzin(s.id);
       const izinBadge = activeIzin
-        ? `<span style="font-size:10px;padding:2px 6px;border-radius:5px;background:${activeIzin.kod==='I'?'rgba(167,139,250,0.2)':activeIzin.kod==='R'?'rgba(251,146,60,0.2)':'rgba(96,165,250,0.2)'};color:${activeIzin.kod==='I'?'var(--izin)':activeIzin.kod==='R'?'var(--rapor)':'var(--evci)'};font-weight:700;margin-right:4px;">${activeIzin.kod==='I'?'🏠 İzin':activeIzin.kod==='R'?'🏥 Rapor':'🌙 Evci'} • ${activeIzin.bitis}</span>`
+        ? `<span style="font-size:10px;padding:2px 6px;border-radius:5px;background:${activeIzin.kod==='I'?'rgba(167,139,250,0.2)':activeIzin.kod==='R'?'rgba(251,146,60,0.2)':'rgba(96,165,250,0.2)'};color:${activeIzin.kod==='I'?'var(--izin)':activeIzin.kod==='R'?'var(--rapor)':'var(--evci)'};font-weight:700;">${activeIzin.kod==='I'?'🏠 İzin':activeIzin.kod==='R'?'🏥 Rapor':'🌙 Evci'} • ${activeIzin.bitis}</span>`
         : '';
 
-      // Admin: + butonu her satırda, izinli ise badge de göster
-      const adminHtml = isAdmin
-        ? `<div style="display:flex;align-items:center;gap:4px;">${izinBadge}<button onclick="event.stopPropagation();openIzinModal(${s.id})" style="width:26px;height:26px;border-radius:6px;border:1.5px solid var(--border);background:var(--surface2);color:var(--accent);font-size:16px;font-weight:700;cursor:pointer;line-height:1;">+</button></div>`
-        : '';
+      // Admin: sadece badge (+ butonu kaldırıldı — panel üzerinden yönetilir)
+      const adminHtml = isAdmin ? `<div>${izinBadge}</div>` : '';
 
-      // Tik butonu (nöbetçi için)
+      // Tik butonu (nöbetçi için) — izinliyse badge göster, tik yok
       let tickCls='tick-btn';
       let tickContent='';
       if(st===true){ tickCls+=' ticked'; }
@@ -1690,12 +1862,15 @@ function renderAll(){
       else if(st==='E'){ tickCls+=' code-e locked'; tickContent='E'; }
       const tickHtml = isAdmin ? '' : `<button class="${tickCls}" id="tick-${s.id}" onclick="event.stopPropagation();toggle(${s.id})">${tickContent}</button>`;
 
+      // Nöbetçide izin badge'i tik butonunun yanında göster
+      const nobetciIzin = !isAdmin && activeIzin ? izinBadge : '';
+
       html+=`<div class="${rowCls}" id="row-${s.id}" onclick="${isAdmin?'':('toggle('+s.id+')')}">
         <div class="student-info">
           <div class="student-name">${s.name}</div>
           <div class="student-meta">${s.cls} • Oda ${s.room}</div>
         </div>
-        <div class="status-area">${adminHtml}${tickHtml}</div>
+        <div class="status-area" style="display:flex;align-items:center;gap:6px;">${adminHtml}${nobetciIzin}${tickHtml}</div>
       </div>`;
     });
   });
