@@ -363,11 +363,11 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
     </div>
     <div class="time-selector">
       <button class="time-btn active" data-time="Akşam" onclick="setTime('Akşam')">🌆 Akşam</button>
+      <button class="time-btn" data-time="Telefon" onclick="setTime('Telefon')">📞 Telefon</button>
       <button class="time-btn" data-time="Etüt" onclick="setTime('Etüt')">📚 Etüt</button>
       <button class="time-btn" data-time="Yatsı" onclick="setTime('Yatsı')">🌙 Yatsı</button>
       <button class="time-btn" data-time="Uyku" onclick="setTime('Uyku')">🛏 Uyku</button>
       <button class="time-btn" data-time="Sabah" onclick="setTime('Sabah')">🌅 Sabah</button>
-      <button class="time-btn" data-time="Telefon" onclick="setTime('Telefon')">📞 Telefon</button>
     </div>
   </div>
 
@@ -442,6 +442,20 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
     <button class="cp-y" onclick="resetCurrent()">Bu Vakit</button>
     <button class="cp-a" onclick="resetAll()">Tümünü Sil</button>
     <button class="cp-n" onclick="closeConfirm()">İptal</button>
+  </div>
+</div>
+
+<!-- KOD UYGULAMA MODAL -->
+<div class="modal-overlay hidden" id="codeModal">
+  <div class="modal-sheet" style="max-width:320px;margin:auto;padding:24px 20px;text-align:center;">
+    <div style="font-size:28px;margin-bottom:8px;" id="codeModalEmoji">📌</div>
+    <div style="font-size:16px;font-weight:700;color:var(--text);margin-bottom:4px;" id="codeModalName"></div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:20px;" id="codeModalCode"></div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <button onclick="applyCode('single')" style="padding:12px;border-radius:10px;border:none;background:var(--accent);color:#000;font-size:14px;font-weight:700;cursor:pointer;" id="codeModalSingle"></button>
+      <button onclick="applyCode('all')" style="padding:12px;border-radius:10px;border:none;background:var(--surface2);color:var(--text);border:1px solid var(--border);font-size:14px;font-weight:600;cursor:pointer;">📅 Tüm vakitlere uygula</button>
+      <button onclick="closeCodeModal()" style="padding:10px;border-radius:10px;border:none;background:transparent;color:var(--muted);font-size:13px;cursor:pointer;">İptal</button>
+    </div>
   </div>
 </div>
 
@@ -570,7 +584,7 @@ const FLOORS = {
 };
 
 const CODES = ['I','R','E'];
-const TIMES = ['Akşam','Etüt','Yatsı','Uyku','Sabah','Telefon'];
+const TIMES = ['Akşam','Telefon','Etüt','Yatsı','Uyku','Sabah'];
 const DAYS  = ['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'];
 const ADMIN_PIN = '1234';
 
@@ -1195,34 +1209,58 @@ async function toggle(id){
   updateRow(id);updateStats();saveToStorage();
 }
 
-async function setCode(id,code){
+let _pendingCode = null;
+
+function setCode(id, code){
   if(!isAdmin){return;}
-  id=String(id);
+  id = String(id);
   const newVal = attendance[id]===code ? false : code;
+  _pendingCode = {id, newVal};
+
+  const s = FLOORS[currentFloor].students.find(s=>String(s.id)===id);
+  const emoji = newVal==='I'?'🏠':newVal==='R'?'🏥':newVal==='E'?'🌙':newVal===false?'❌':'📌';
+  const kodYazi = newVal===false ? 'Kodu kaldır' : 'Kod: '+newVal;
+
+  document.getElementById('codeModalEmoji').textContent = emoji;
+  document.getElementById('codeModalName').textContent = s ? s.name : '';
+  document.getElementById('codeModalCode').textContent = kodYazi;
+  document.getElementById('codeModalSingle').textContent = '✅ Sadece '+currentTime+' vakti';
+  document.getElementById('codeModal').classList.remove('hidden');
+}
+
+function closeCodeModal(){
+  document.getElementById('codeModal').classList.add('hidden');
+  _pendingCode = null;
+}
+
+async function applyCode(mode){
+  if(!_pendingCode) return;
+  const {id, newVal} = _pendingCode;
+  closeCodeModal();
 
   showSync('⏫ Kaydediliyor...','#facc15');
-
-  // Cloud'dan güncel veriyi çek ve merge et
   try{
     const cloudData = await loadFromCloud(currentFloor, window._activeKey||todayKey);
     if(cloudData && Object.keys(cloudData).length>0){
       TIMES.forEach(t=>{
-        // Cloud'daki veriyi base olarak al, attendanceHistory üzerine yaz
         const cloudTime = stringifyKeys(cloudData[t] || {});
         attendanceHistory[t] = {...cloudTime, ...(attendanceHistory[t]||{})};
       });
     }
   }catch(e){}
 
-  // Tüm vakitlere kodu uygula
-  TIMES.forEach(t=>{
-    if(!attendanceHistory[t]) attendanceHistory[t]={};
-    attendanceHistory[t][id]=newVal;
-  });
+  if(mode==='all'){
+    TIMES.forEach(t=>{
+      if(!attendanceHistory[t]) attendanceHistory[t]={};
+      attendanceHistory[t][id]=newVal;
+    });
+  } else {
+    if(!attendanceHistory[currentTime]) attendanceHistory[currentTime]={};
+    attendanceHistory[currentTime][id]=newVal;
+  }
   attendance[id]=newVal;
 
-  updateRow(id);updateStats();
-
+  updateRow(id); updateStats();
   try{
     await saveToCloud(currentFloor, window._activeKey||todayKey, attendanceHistory);
     showSync('✅ Kaydedildi');
