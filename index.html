@@ -388,10 +388,9 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
   <div class="content" id="studentList"></div>
 
   <div class="bottom-bar">
-    <button class="btn btn-danger" onclick="confirmReset()">🗑</button>
     <button class="btn btn-save" id="saveBtn" onclick="lockCurrentTime()">💾 Kaydet</button>
-    <button class="btn btn-blue" onclick="openReport()">📊 Rapor</button>
-    <button class="btn btn-purple" id="pdfBtn" onclick="exportPDF()" style="display:none;">📄 Haftalık PDF</button>
+    <button class="btn btn-blue" onclick="openReport()">📊 Günlük Rapor</button>
+    <button class="btn btn-purple" id="pdfBtn" onclick="exportPDF()" style="display:none;">🖨️ PDF Yazdır</button>
   </div>
 </div>
 
@@ -1434,36 +1433,24 @@ function renderMevcutIzinler(){
 async function deleteIzin(idx){
   if(!_izinModalId) return;
   if(!_izinler[_izinModalId]) return;
-  _izinler[_izinModalId].splice(idx,1);
-  if(!_izinler[_izinModalId].length) delete _izinler[_izinModalId];
+  const id = _izinModalId;
+
+  _izinler[id].splice(idx,1);
+  if(!_izinler[id].length) delete _izinler[id];
   await saveIzinlerToCloud();
 
-  // Bu öğrencinin tüm vakitlerindeki kodu Firebase'den de temizle
-  const id = _izinModalId;
+  // Tüm vakitlerde bu öğrencinin kodunu temizle
+  TIMES.forEach(t=>{
+    if(!attendanceHistory[t]) attendanceHistory[t]={};
+    attendanceHistory[t][id] = false;
+  });
+  attendance[id] = false;
+
+  // Firebase yoklama verisini de güncelle
   const activeKey = window._activeKey||todayKey;
   const fbKey = 'f'+currentFloor+'_'+activeKey;
-  try{
-    const r = await fetch(FB_URL+'/yoklama/'+fbKey+'.json?'+Date.now(),{cache:'no-store'});
-    const cloudData = await r.json();
-    if(cloudData){
-      TIMES.forEach(t=>{
-        if(cloudData[t] && cloudData[t][id] !== undefined){
-          cloudData[t][id] = false;
-        }
-      });
-      await fetch(FB_URL+'/yoklama/'+fbKey+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(cloudData)});
-      // Local'i de güncelle
-      Object.assign(attendanceHistory, stringifyHistory(cloudData));
-    }
-  }catch(e){}
-
-  // attendance'dan da temizle
-  if(typeof attendance[id]==='string') attendance[id] = false;
-  TIMES.forEach(t=>{
-    if(attendanceHistory[t] && typeof attendanceHistory[t][id]==='string'){
-      attendanceHistory[t][id] = false;
-    }
-  });
+  saveToCloud(currentFloor, activeKey, attendanceHistory).catch(()=>{});
+  try{ localStorage.setItem('yoklama_f'+fbKey, JSON.stringify(attendanceHistory)); }catch(e){}
 
   renderMevcutIzinler();
   renderAll(); updateStats();
