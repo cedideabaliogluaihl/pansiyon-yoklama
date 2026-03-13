@@ -10,8 +10,8 @@
 <meta http-equiv="Expires" content="0">
 <meta name="theme-color" content="#0d1117">
 <title>📋 Yoklama</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>">
-<link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230d1117'/><text y='.88em' font-size='80' x='10'>📋</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📋</text></svg>"><text y='.9em' font-size='90'>📋</text></svg>">
+<rect width='100' height='100' rx='20' fill='%230d1117'/><text y='.88em' font-size='80' x='10'>📋</text></svg>">
 <meta name="apple-mobile-web-app-title" content="Yoklama">
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Noto+Sans:wght@300;400;600&display=swap');
@@ -285,11 +285,57 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
     <div class="login-btns">
       <button class="login-btn btn-nobetci" onclick="goKatSec()">👮 Nöbetçi Girişi</button>
       <button class="login-btn btn-admin" onclick="goAdmin()" style="margin-top:4px;">🔐 Admin Girişi</button>
+      <button class="login-btn" onclick="goVeli()" style="margin-top:4px;background:linear-gradient(135deg,#0f766e,#0d9488);color:#fff;">👨‍👩‍👦 Veli Girişi</button>
     </div>
   </div>
 </div>
 
-<!-- ADMİN MENÜ -->
+<!-- VELİ GİRİŞ -->
+<div class="screen" id="screenVeli">
+  <div class="admin-wrap">
+    <div style="font-size:46px;">👨‍👩‍👦</div>
+    <div class="admin-title">Veli Girişi</div>
+    <div class="admin-sub">Çocuğunuzun adı soyadı ve oda numarasını girin</div>
+    <div style="display:flex;flex-direction:column;gap:10px;width:100%;margin-bottom:12px;">
+      <input id="veliAd" type="text" placeholder="Ad Soyad (örn: AHMET YASİN KAYA)" autocomplete="off"
+        style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:14px;box-sizing:border-box;text-transform:uppercase;">
+      <input id="veliOda" type="text" placeholder="Oda No (örn: 201)" autocomplete="off"
+        style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:14px;box-sizing:border-box;">
+    </div>
+    <div id="veliError" class="pin-error hidden">⚠️ Öğrenci bulunamadı. Ad soyad ve oda numarasını kontrol edin.</div>
+    <button onclick="veliGiris()" style="width:100%;padding:13px;border-radius:10px;border:none;background:linear-gradient(135deg,#0f766e,#0d9488);color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px;">Görüntüle</button>
+    <button class="back-btn" onclick="goScreen('screenLogin')">← Geri</button>
+  </div>
+</div>
+
+<!-- VELİ BİLGİ EKRANI -->
+<div class="screen" id="screenVeliInfo">
+  <div style="display:flex;flex-direction:column;height:100%;overflow:hidden;">
+    <!-- Header -->
+    <div style="padding:14px 16px 10px;border-bottom:1px solid var(--border);background:var(--surface);">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button onclick="goScreen('screenVeli')" style="padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;cursor:pointer;">← Geri</button>
+        <div style="flex:1;">
+          <div id="veliOgrAd" style="font-family:'Rajdhani',sans-serif;font-size:17px;font-weight:700;color:var(--accent);"></div>
+          <div id="veliOgrMeta" style="font-size:11px;color:var(--muted);"></div>
+        </div>
+        <button onclick="veliYenile()" style="padding:6px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:12px;cursor:pointer;">🔄</button>
+      </div>
+      <!-- Özet istatistik -->
+      <div id="veliStats" style="display:flex;gap:6px;margin-top:10px;"></div>
+    </div>
+    <!-- Sekmeler -->
+    <div style="display:flex;border-bottom:1px solid var(--border);background:var(--surface);">
+      <button id="veliTab0" onclick="switchVeliTab(0)" style="flex:1;padding:9px 4px;border:none;background:none;color:var(--accent);font-size:11px;font-weight:700;border-bottom:2px solid var(--accent);cursor:pointer;">📅 Bu Hafta</button>
+      <button id="veliTab1" onclick="switchVeliTab(1)" style="flex:1;padding:9px 4px;border:none;background:none;color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;">📆 Geçmiş</button>
+      <button id="veliTab2" onclick="switchVeliTab(2)" style="flex:1;padding:9px 4px;border:none;background:none;color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;">📋 İzinler</button>
+    </div>
+    <!-- İçerik -->
+    <div id="veliContent" style="flex:1;overflow-y:auto;padding:12px 14px;"></div>
+  </div>
+</div>
+
+
 <div class="screen" id="screenAdminMenu">
   <div class="kat-wrap">
     <div class="login-logo">🔐</div>
@@ -302,6 +348,10 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
       <button class="kat-btn" onclick="openAdminPanel()">
         <div class="kat-icon">👥</div>
         <div class="kat-info"><strong>📋 Yönetim Paneli</strong><span>Atama, öğrenci & izin yönetimi</span></div>
+      </button>
+      <button class="kat-btn" onclick="openSifreModal()">
+        <div class="kat-icon">🔑</div>
+        <div class="kat-info"><strong>Şifre Değiştir</strong><span>Admin giriş şifresini güncelle</span></div>
       </button>
     </div>
     <button class="back-btn" onclick="goScreen('screenLogin')">← Geri</button>
@@ -484,17 +534,33 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
       </div>
       <!-- Saat (opsiyonel) -->
       <div style="display:flex;align-items:center;gap:8px;">
-        <span style="font-size:12px;color:var(--muted);width:60px;">⏰ Saat</span>
+        <span style="font-size:12px;color:var(--muted);width:60px;">⏰ Dönüş</span>
         <div style="flex:1;display:flex;align-items:center;gap:6px;">
           <input type="time" id="izinEkleSaat" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;">
           <button onclick="document.getElementById('izinEkleSaat').value=''" style="padding:6px 10px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:11px;cursor:pointer;">Sil</button>
         </div>
       </div>
-      <div style="font-size:10px;color:var(--muted);padding-left:68px;">Boş bırakılırsa gün boyunca geçerli</div>
+      <div style="font-size:10px;color:var(--muted);padding-left:68px;">Dönüş saati: bitiş günü bu saatten sonra otomatik kalkar</div>
     </div>
     <div style="display:flex;gap:8px;">
       <button onclick="saveIzinPanel()" style="flex:1;padding:11px;border-radius:8px;border:none;background:var(--accent);color:#000;font-weight:700;font-size:13px;cursor:pointer;">✅ Kaydet</button>
       <button onclick="document.getElementById('izinEkleModal').classList.add('hidden')" style="flex:1;padding:11px;border-radius:8px;border:none;background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;">İptal</button>
+    </div>
+  </div>
+</div>
+
+<!-- ŞİFRE DEĞİŞTİR MODAL -->
+<div class="modal-overlay hidden" id="sifreModal" style="z-index:2000;">
+  <div class="modal-sheet" style="max-width:320px;margin:auto;padding:24px 20px;">
+    <div style="font-size:16px;font-weight:700;color:var(--accent);margin-bottom:16px;">🔑 Şifre Değiştir</div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
+      <input type="password" id="sifreEski" placeholder="Mevcut şifre" style="padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:14px;">
+      <input type="password" id="sifreYeni" placeholder="Yeni şifre" style="padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:14px;">
+      <input type="password" id="sifreYeniTekrar" placeholder="Yeni şifre (tekrar)" style="padding:10px 12px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:14px;">
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button onclick="saveSifre()" style="flex:1;padding:11px;border-radius:8px;border:none;background:var(--accent);color:#000;font-weight:700;font-size:13px;cursor:pointer;">✅ Kaydet</button>
+      <button onclick="document.getElementById('sifreModal').classList.add('hidden')" style="flex:1;padding:11px;border-radius:8px;border:none;background:var(--surface2);color:var(--text);font-size:13px;cursor:pointer;">İptal</button>
     </div>
   </div>
 </div>
@@ -835,30 +901,6 @@ async function loadFromStorage(floor){
     }
     showSync('✅ Hazır');
     setTimeout(hideSync, 1500);
-    // Eski sistemden kalan string kodları temizle (izin sistemi yokken girilmiş)
-    // Sadece _izinler'de kaydı olmayan öğrencilerin kodlarını sil
-    let changed = false;
-    TIMES.forEach(t=>{
-      if(!attendanceHistory[t]) return;
-      Object.keys(attendanceHistory[t]).forEach(id=>{
-        const val = attendanceHistory[t][id];
-        if(typeof val === 'string'){
-          const activeIzin = getActiveIzin(id);
-          if(!activeIzin){
-            attendanceHistory[t][id] = false;
-            changed = true;
-          }
-        }
-      });
-    });
-    if(changed){
-      // attendance'ı da güncelle
-      const def = Object.fromEntries(FLOORS[floor].students.map(s=>[String(s.id),false]));
-      attendance = {...def, ...attendanceHistory[currentTime]};
-      saveToCloud(floor, window._activeKey||todayKey, attendanceHistory).catch(()=>{});
-      try{ localStorage.setItem('yoklama_f'+floor+'_'+(window._activeKey||todayKey), JSON.stringify(attendanceHistory)); }catch(e){}
-    }
-    applyIzinlerToAttendance();
   }catch(e){
     // Offline fallback
     try{
@@ -894,6 +936,8 @@ async function getAllDataForFloor(floor){
 function goScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
 // ── SAYFA YÜKLENINCE ──
 window.addEventListener('load',()=>{
+  // Admin şifresini Firebase'den yükle
+  loadAdminPin().catch(()=>{});
   // PDF butonu sadece PC'de görünsün
   const isDesktop = window.innerWidth >= 768 && !/Mobi|Android/i.test(navigator.userAgent);
   if(isDesktop) document.getElementById('pdfBtn').style.display='';
@@ -912,6 +956,8 @@ window.addEventListener('load',()=>{
 let selectedFloor = null;
 
 async function goKatSec(){
+  isAdmin = false; // Admin oturumunu sıfırla
+  window._activeTeacherName = '';
   goScreen('screenKat');
   updateKatAssignments();
 }
@@ -922,7 +968,7 @@ function goAdmin(){
   goScreen('screenAdminPin');
 }
 function checkPin(){
-  if(document.getElementById('pinInput').value===ADMIN_PIN){
+  if(document.getElementById('pinInput').value===_adminPin){
     isAdmin=true;
     goScreen('screenAdminMenu');
   }
@@ -1092,10 +1138,233 @@ async function continueStartApp(floor, selectedKey){
   document.querySelectorAll('.time-btn').forEach(b=>b.classList.toggle('active', b.getAttribute('data-time')==='Akşam'));
   filterText='';filterRoomVal='';
   goScreen('screenMain');
+  // Önce izinleri taze çek
+  await loadIzinler();
+  // Sonra yoklama verisini yükle
   await loadFromStorage(floor);
+  // İzinleri yoklamaya uygula (kilitli vakitlere de)
+  applyIzinlerToAttendance();
+  // Ekranı güncelle
   renderAll();updateStats();updateSaveBtn();
   window.addEventListener('beforeunload',saveToStorage);
   document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')saveToStorage();});
+}
+
+// ══════════════════════════════════════
+// VELİ GİRİŞİ
+// ══════════════════════════════════════
+let _veliOgr = null;
+let _veliTab = 0;
+
+function goVeli(){
+  document.getElementById('veliAd').value = '';
+  document.getElementById('veliOda').value = '';
+  document.getElementById('veliError').classList.add('hidden');
+  goScreen('screenVeli');
+}
+
+async function veliGiris(){
+  const ad = document.getElementById('veliAd').value.trim().toUpperCase();
+  const oda = document.getElementById('veliOda').value.trim();
+  if(!ad || !oda){ showToast('⚠️ Ad soyad ve oda no girin'); return; }
+
+  // Tüm katlarda ara
+  let found = null;
+  [2,3].forEach(f => {
+    const s = FLOORS[f].students.find(s =>
+      s.name.toUpperCase() === ad && String(s.room) === String(oda)
+    );
+    if(s) found = {...s, floor: f};
+  });
+
+  if(!found){
+    document.getElementById('veliError').classList.remove('hidden');
+    return;
+  }
+  document.getElementById('veliError').classList.add('hidden');
+  _veliOgr = found;
+  _veliTab = 0;
+  await veliYukle();
+  goScreen('screenVeliInfo');
+}
+
+async function veliYukle(){
+  const s = _veliOgr;
+  document.getElementById('veliOgrAd').textContent = s.name;
+  document.getElementById('veliOgrMeta').textContent = `${s.cls} • Oda ${s.room} • ${FLOORS[s.floor].label}`;
+  await loadIzinler();
+  switchVeliTab(_veliTab);
+}
+
+async function veliYenile(){
+  showToast('🔄 Yenileniyor...');
+  await veliYukle();
+  showToast('✅ Güncellendi');
+}
+
+function switchVeliTab(tab){
+  _veliTab = tab;
+  [0,1,2].forEach(i => {
+    const btn = document.getElementById('veliTab'+i);
+    btn.style.color = i===tab ? 'var(--accent)' : 'var(--muted)';
+    btn.style.borderBottom = i===tab ? '2px solid var(--accent)' : '2px solid transparent';
+    btn.style.fontWeight = i===tab ? '700' : '600';
+  });
+  if(tab===0) renderVeliHafta();
+  else if(tab===1) renderVeliGecmis();
+  else renderVeliIzinler();
+}
+
+async function renderVeliHafta(){
+  const s = _veliOgr;
+  const wk = getWeekDates();
+
+  // Her gün için ayrı ayrı çek
+  const allData = {};
+  await Promise.all(wk.map(async ({key}) => {
+    try{
+      const r = await fetch(FB_URL+'/yoklama/f'+s.floor+'_'+key+'.json?'+Date.now(),{cache:'no-store'});
+      const j = await r.json();
+      if(j) allData[key] = JSON.parse(JSON.stringify(j,(k,v)=>v===0?false:v));
+    }catch(e){}
+  }));
+
+  let totalYoklama=0, katildi=0, kodlu=0, yok=0;
+  let html = '';
+
+  wk.forEach(({key,label,short}) => {
+    const dayData = allData[key] || {};
+    const hasAny = TIMES.some(t => dayData[t] && dayData[t][String(s.id)] !== undefined);
+    if(!hasAny) return;
+
+    html += `<div style="margin-bottom:10px;border-radius:10px;border:1px solid var(--border);overflow:hidden;">
+      <div style="padding:7px 12px;background:var(--surface2);font-size:12px;font-weight:700;color:var(--text);">${label} — ${short}</div>`;
+
+    TIMES.forEach(t => {
+      const vakitData = dayData[t] || {};
+      const val = vakitData[String(s.id)];
+      if(val === undefined) return;
+      totalYoklama++;
+      let icon, label2, color;
+      if(val === true){ katildi++; icon='✅'; label2='Mevcut'; color='var(--present)'; }
+      else if(val === false){ yok++; icon='❌'; label2='Yok'; color='var(--absent)'; }
+      else { kodlu++; icon = val==='I'?'🏠':val==='R'?'🏥':'🌙'; label2=val==='I'?'İzin':val==='R'?'Rapor':'Evci'; color='var(--izin)'; }
+      html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;border-top:1px solid var(--border);">
+        <span style="font-size:12px;color:var(--muted);">${t}</span>
+        <span style="font-size:12px;font-weight:700;color:${color};">${icon} ${label2}</span>
+      </div>`;
+    });
+    html += `</div>`;
+  });
+
+  if(!html) html = `<div style="color:var(--muted);font-size:13px;text-align:center;padding:30px 0;">Bu hafta henüz yoklama alınmamış</div>`;
+
+  // İstatistik bar
+  const pct = totalYoklama ? Math.round(katildi/totalYoklama*100) : 0;
+  const statColor = pct>=80?'var(--present)':pct>=60?'#f59e0b':'var(--absent)';
+  document.getElementById('veliStats').innerHTML = `
+    <div style="flex:1;background:var(--surface2);border-radius:9px;padding:7px 4px;text-align:center;border:1px solid var(--border);">
+      <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--accent2);">${totalYoklama}</div>
+      <div style="font-size:9px;color:var(--muted);text-transform:uppercase;">Toplam</div>
+    </div>
+    <div style="flex:1;background:var(--surface2);border-radius:9px;padding:7px 4px;text-align:center;border:1px solid var(--border);">
+      <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--present);">${katildi}</div>
+      <div style="font-size:9px;color:var(--muted);text-transform:uppercase;">Mevcut</div>
+    </div>
+    <div style="flex:1;background:var(--surface2);border-radius:9px;padding:7px 4px;text-align:center;border:1px solid var(--border);">
+      <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:var(--absent);">${yok}</div>
+      <div style="font-size:9px;color:var(--muted);text-transform:uppercase;">Yok</div>
+    </div>
+    <div style="flex:1;background:var(--surface2);border-radius:9px;padding:7px 4px;text-align:center;border:1px solid var(--border);">
+      <div style="font-family:'Rajdhani',sans-serif;font-size:20px;font-weight:700;color:${statColor};">%${pct}</div>
+      <div style="font-size:9px;color:var(--muted);text-transform:uppercase;">Devam</div>
+    </div>`;
+
+  document.getElementById('veliContent').innerHTML = html;
+}
+
+async function renderVeliGecmis(){
+  const s = _veliOgr;
+
+  // Son 4 haftayı hesapla
+  const weeks = [];
+  for(let w=0; w<4; w++){
+    const mon = new Date(today);
+    const d = today.getDay()===0?6:today.getDay()-1;
+    mon.setDate(today.getDate()-d - w*7);
+    const days = Array.from({length:7},(_,i)=>{
+      const dt=new Date(mon); dt.setDate(mon.getDate()+i);
+      const key=dt.getFullYear()+'_'+String(dt.getMonth()+1).padStart(2,'0')+'_'+String(dt.getDate()).padStart(2,'0');
+      return {key, label: DAYS[i], short: dt.toLocaleDateString('tr-TR',{day:'2-digit',month:'2-digit'})};
+    });
+    weeks.push({label: w===0?'Bu Hafta': w===1?'Geçen Hafta': (w+1)+'. Hafta Önce', days});
+  }
+
+  // Tüm günleri paralel çek
+  const allKeys = weeks.flatMap(w => w.days.map(d => d.key));
+  const allData = {};
+  await Promise.all(allKeys.map(async key => {
+    try{
+      const r = await fetch(FB_URL+'/yoklama/f'+s.floor+'_'+key+'.json?'+Date.now(),{cache:'no-store'});
+      const j = await r.json();
+      if(j) allData[key] = JSON.parse(JSON.stringify(j,(k,v)=>v===0?false:v));
+    }catch(e){}
+  }));
+
+  let html = '';
+  weeks.forEach(({label, days}) => {
+    let totalW=0, katW=0, yokW=0, kodW=0;
+    days.forEach(({key}) => {
+      const dayData = allData[key] || {};
+      TIMES.forEach(t => {
+        const val = (dayData[t]||{})[String(s.id)];
+        if(val===undefined) return;
+        totalW++;
+        if(val===true) katW++;
+        else if(val===false) yokW++;
+        else kodW++;
+      });
+    });
+    if(!totalW) return;
+    const pct = Math.round(katW/totalW*100);
+    const c = pct>=80?'var(--present)':pct>=60?'#f59e0b':'var(--absent)';
+    html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:11px 14px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);margin-bottom:8px;">
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--text);">${label}</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px;">✅ ${katW} mevcut &nbsp;❌ ${yokW} yok &nbsp;📌 ${kodW} kodlu</div>
+      </div>
+      <div style="font-family:'Rajdhani',sans-serif;font-size:22px;font-weight:700;color:${c};">%${pct}</div>
+    </div>`;
+  });
+
+  if(!html) html = `<div style="color:var(--muted);font-size:13px;text-align:center;padding:30px 0;">Geçmiş yoklama verisi bulunamadı</div>`;
+  document.getElementById('veliContent').innerHTML = html;
+}
+
+function renderVeliIzinler(){
+  const s = _veliOgr;
+  const izinList = _izinler[String(s.id)] || [];
+  let html = '';
+  if(!izinList.length){
+    html = `<div style="color:var(--muted);font-size:13px;text-align:center;padding:30px 0;">Kayıtlı izin bulunmuyor</div>`;
+  } else {
+    izinList.forEach(iz => {
+      const aktif = getActiveIzin(s.id);
+      const isAktif = aktif && aktif === iz;
+      const icon = iz.kod==='I'?'🏠':iz.kod==='R'?'🏥':'🌙';
+      const ad = iz.kod==='I'?'İzin':iz.kod==='R'?'Rapor':'Evci';
+      const renk = iz.kod==='I'?'var(--izin)':iz.kod==='R'?'var(--rapor)':'var(--evci)';
+      html += `<div style="padding:12px 14px;border-radius:10px;background:var(--surface2);border:1px solid ${isAktif?renk:'var(--border)'};margin-bottom:8px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+          <span style="font-size:18px;">${icon}</span>
+          <span style="font-size:14px;font-weight:700;color:${renk};">${ad}</span>
+          ${isAktif?`<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:${renk};color:#000;font-weight:700;">AKTİF</span>`:''}
+        </div>
+        <div style="font-size:12px;color:var(--muted);">📅 ${iz.baslangic} → ${iz.bitis}${iz.saatBitis?` &nbsp;⏰ ${iz.saatBitis}'e kadar`:''}</div>
+      </div>`;
+    });
+  }
+  document.getElementById('veliContent').innerHTML = html;
 }
 
 function logout(){
@@ -1351,6 +1620,38 @@ function changeStudentRoom(id, newRoom){
   showToast('✅ Oda → '+newRoom);
 }
 
+// Admin şifresini Firebase'den yükle
+let _adminPin = '1234'; // varsayılan
+async function loadAdminPin(){
+  try{
+    const r = await fetch(FB_URL+'/adminPin.json?'+Date.now(),{cache:'no-store'});
+    const j = await r.json();
+    if(j && j.pin) _adminPin = j.pin;
+  }catch(e){}
+}
+
+function openSifreModal(){
+  document.getElementById('sifreEski').value='';
+  document.getElementById('sifreYeni').value='';
+  document.getElementById('sifreYeniTekrar').value='';
+  document.getElementById('sifreModal').classList.remove('hidden');
+}
+
+async function saveSifre(){
+  const eski = document.getElementById('sifreEski').value;
+  const yeni = document.getElementById('sifreYeni').value;
+  const tekrar = document.getElementById('sifreYeniTekrar').value;
+  if(eski !== _adminPin){ showToast('⚠️ Mevcut şifre yanlış'); return; }
+  if(!yeni || yeni.length < 3){ showToast('⚠️ Şifre en az 3 karakter olmalı'); return; }
+  if(yeni !== tekrar){ showToast('⚠️ Şifreler eşleşmiyor'); return; }
+  try{
+    await fetch(FB_URL+'/adminPin.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({pin:yeni})});
+    _adminPin = yeni;
+    document.getElementById('sifreModal').classList.add('hidden');
+    showToast('✅ Şifre güncellendi');
+  }catch(e){ showToast('⚠️ Kayıt başarısız'); }
+}
+
 async function refreshData(){
   const btn = document.getElementById('refreshBtn');
   if(btn){ btn.textContent='⏳'; btn.disabled=true; }
@@ -1359,6 +1660,7 @@ async function refreshData(){
     await loadFloorsFromCloud();
     students = FLOORS[currentFloor].students;
     await loadFromStorage(currentFloor);
+    applyIzinlerToAttendance();
     renderAll(); updateStats();
     showToast('✅ Yenilendi');
   }catch(e){ showToast('⚠️ Yenileme başarısız'); }
@@ -1404,12 +1706,24 @@ function renderTeacherListFromData(list){
   container.innerHTML = '';
   if(!list.length){ container.innerHTML='<div style="color:var(--muted);font-size:13px;">Henüz öğretmen eklenmedi</div>'; return; }
   list.forEach((name,i)=>{
+    const key = name.replace(/\s+/g,'_');
     const row = document.createElement('div');
     row.style.cssText='display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);';
     row.innerHTML=`<span style="font-size:13px;color:var(--text);">${name}</span>
-      <button onclick="removeTeacher(${i})" style="padding:5px 10px;border-radius:7px;border:none;background:#dc2626;color:#fff;font-size:12px;cursor:pointer;">🗑</button>`;
+      <div style="display:flex;gap:6px;">
+        <button onclick="resetTeacherPin('${key}','${name}')" style="padding:5px 10px;border-radius:7px;border:none;background:var(--surface);border:1px solid var(--accent);color:var(--accent);font-size:12px;cursor:pointer;" title="PIN Sıfırla">🔄 PIN</button>
+        <button onclick="removeTeacher(${i})" style="padding:5px 10px;border-radius:7px;border:none;background:#dc2626;color:#fff;font-size:12px;cursor:pointer;">🗑</button>
+      </div>`;
     container.appendChild(row);
   });
+}
+
+async function resetTeacherPin(key, name){
+  if(!confirm(name+' adlı öğretmenin PIN\'i sıfırlanacak. Emin misiniz?')) return;
+  try{
+    await fetch(FB_URL+'/teacherPins/'+key+'.json', {method:'DELETE'});
+    showToast('✅ '+name+' PIN sıfırlandı — bir sonraki girişte yeniden belirleyecek');
+  }catch(e){ showToast('⚠️ Sıfırlama başarısız'); }
 }
 
 async function renderTeacherList(){
@@ -1517,6 +1831,16 @@ function saveLockedTimes(){
   fetch(FB_URL+'/locks/'+fbKey+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(_lockedTimes)}).catch(()=>{});
 }
 
+function saveLockTime(vakit){
+  // Kilitleme saatini kaydet
+  const activeKey = window._activeKey||todayKey;
+  const fbKey = 'f'+currentFloor+'_'+activeKey;
+  const now = new Date();
+  const saat = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
+  const key = vakit.replace(/\s/g,'_');
+  fetch(FB_URL+'/lockTimes/'+fbKey+'/'+key+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({saat, teacher: window._activeTeacherName||''})}).catch(()=>{});
+}
+
 async function lockCurrentTime(){
   const locked = _lockedTimes;
   if(locked.includes(currentTime)){
@@ -1554,6 +1878,7 @@ async function lockCurrentTime(){
   // Kilitle
   _lockedTimes = [...locked, currentTime];
   saveLockedTimes();
+  saveLockTime(currentTime); // saati kaydet
   saveToStorage();
   updateSaveBtn();
   showToast('🔒 '+currentTime+' vakti kilitlendi!');
@@ -1568,7 +1893,7 @@ function updateSaveBtn(){
     btn.textContent = '🔓 Kilidi Aç';
     btn.classList.add('locked');
   } else {
-    btn.textContent = '💾 Kaydet';
+    btn.textContent = '🔒 Yoklamayı Kilitle';
     btn.classList.remove('locked');
   }
 }
@@ -1626,9 +1951,8 @@ function getActiveIzin(studentId){
 
   return list.find(iz => {
     if(iz.baslangic > activeDate || iz.bitis < activeDate) return false;
-    // Bitiş saati varsa: sadece bugünse ve saat geçmemişse aktif
-    if(iz.saatBitis){
-      if(activeDate !== todayStr) return true; // başka güne bakıyorsa saate takılma
+    // Bitiş saati varsa: sadece bitiş günündeyse ve saat geçmişse izin bitti
+    if(iz.saatBitis && activeDate === iz.bitis && activeDate === todayStr){
       return nowTime <= iz.saatBitis;
     }
     return true;
@@ -1714,21 +2038,19 @@ async function saveIzin(){
 
 function applyIzinlerToAttendance(){
   const activeDate = (window._activeKey||todayKey).replace(/_/g,'-');
-  const todayStr = new Date().toISOString().split('T')[0];
-  const now = new Date();
-  const nowTime = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
 
   students.forEach(s=>{
     const id = String(s.id);
-    const activeIzin = getActiveIzin(s.id); // saat kontrolü dahil
+    const activeIzin = getActiveIzin(s.id);
     if(activeIzin){
+      // İzin varsa — kilitli olsa bile üzerine yaz (admin kararı)
       TIMES.forEach(t=>{
         if(!attendanceHistory[t]) attendanceHistory[t]={};
         attendanceHistory[t][id] = activeIzin.kod;
       });
       attendance[id] = activeIzin.kod;
     } else {
-      // İzin bitti veya yok — kodu temizle
+      // İzin bitti veya yok — sadece kilitli değilse temizle
       const cur = attendance[id];
       if(typeof cur === 'string'){
         TIMES.forEach(t=>{
@@ -1890,7 +2212,7 @@ function renderAll(){
       html+=`<div class="${rowCls}" id="row-${s.id}" onclick="${isAdmin?'':('toggle('+s.id+')')}">
         <div class="student-info">
           <div class="student-name">${s.name}</div>
-          <div class="student-meta">${s.cls} • Oda ${s.room}${!isAdmin && activeIzin && activeIzin.saatBitis ? ` <span style="color:var(--accent);font-size:10px;">⏰ ${activeIzin.saatBitis}'a kadar izinli</span>` : ''}</div>
+          <div class="student-meta">${s.cls} • Oda ${s.room}${!isAdmin && activeIzin ? ` <span style="color:var(--accent);font-size:10px;">${activeIzin.baslangic===activeIzin.bitis ? activeIzin.baslangic : activeIzin.baslangic+' → '+activeIzin.bitis}${activeIzin.saatBitis ? ' • ⏰ '+activeIzin.saatBitis+'\'e kadar' : ''} izinli</span>` : ''}</div>
         </div>
         <div class="status-area" style="display:flex;align-items:center;gap:6px;">${adminHtml}${nobetciIzin}${tickHtml}</div>
       </div>`;
@@ -1956,20 +2278,42 @@ function renderVakitTabs(){
   document.getElementById('vakitTabs').innerHTML=TIMES.map(t=>{
     const data=t===currentTime?attendance:(attendanceHistory[t]||{});
     const has=Object.values(data).some(v=>v!==false);
-    return`<button class="vakit-tab${reportVakit===t?' active':''}" onclick="switchRV('${t}')">${t}${has?' •':''}</button>`;
+    const isLocked = _lockedTimes.includes(t);
+    return`<button class="vakit-tab${reportVakit===t?' active':''}" onclick="switchRV('${t}')">${t}${isLocked?' 🔒':''}${has?' •':''}</button>`;
   }).join('');
 }
 function switchRV(t){reportVakit=t;renderVakitTabs();renderReport();}
-function renderReport(){
+async function renderReport(){
   attendanceHistory[currentTime]={...attendance};
   const data=reportVakit===currentTime?attendance:(attendanceHistory[reportVakit]||{});
   const absent=students.filter(s=>data[s.id]===false);
   const present=students.filter(s=>data[s.id]===true);
   const coded=students.filter(s=>typeof data[s.id]==='string');
+
+  // Kilit saatini çek
+  let lockTimeHtml = '';
+  if(_lockedTimes.includes(reportVakit)){
+    try{
+      const activeKey = window._activeKey||todayKey;
+      const fbKey = 'f'+currentFloor+'_'+activeKey;
+      const key = reportVakit.replace(/\s/g,'_');
+      const r = await fetch(FB_URL+'/lockTimes/'+fbKey+'/'+key+'.json?'+Date.now(),{cache:'no-store'});
+      const j = await r.json();
+      if(j && j.saat){
+        lockTimeHtml = `<div style="font-size:11px;color:var(--accent);margin-bottom:8px;text-align:center;">🔒 ${j.teacher ? j.teacher+' • ' : ''}${j.saat} itibarıyla kilitlendi</div>`;
+      }
+    }catch(e){}
+  }
+
   const rows=(list,showCode)=>list.length
-    ?list.map(s=>`<div class="report-row">${showCode?`<span class="rr-code pill-${(data[s.id]||'').toLowerCase()}">${data[s.id]}</span>`:''} ${s.name}<span class="rr-meta">${s.cls}•${s.room}</span></div>`).join('')
+    ?list.map(s=>{
+      const iz = showCode ? getActiveIzin(s.id) : null;
+      const saatStr = iz && iz.saatBitis ? ` <span style="font-size:10px;color:var(--accent);">⏰ ${iz.saatBitis}'e kadar</span>` : '';
+      return `<div class="report-row">${showCode?`<span class="rr-code pill-${(data[s.id]||'').toLowerCase()}">${data[s.id]}</span>`:''} ${s.name}${saatStr}<span class="rr-meta">${s.cls}•${s.room}</span></div>`;
+    }).join('')
     :`<div class="report-empty">Kimse yok</div>`;
   document.getElementById('reportContent').innerHTML=`
+    ${lockTimeHtml}
     <div class="report-section"><div class="report-section-header rsh-absent">❌ Gelmeyen <span>${absent.length}</span></div>${rows(absent,false)}</div>
     <div class="report-section"><div class="report-section-header rsh-coded">📌 Kodlu <span>${coded.length}</span></div>${rows(coded,true)}</div>
     <div class="report-section"><div class="report-section-header rsh-present">✅ Mevcut <span>${present.length}</span></div>${rows(present,false)}</div>`;
@@ -1982,7 +2326,11 @@ function copyReport(){
   const present=students.filter(s=>data[s.id]===true);
   let text=`📋 ${FLOORS[currentFloor].label} • ${reportVakit} • ${today.toLocaleDateString('tr-TR')}\n\n`;
   text+=`❌ GELMEYEN (${absent.length}):\n${absent.map(s=>`  • ${s.name} (${s.room})`).join('\n')||'  -'}\n\n`;
-  text+=`📌 KODLU (${coded.length}):\n${coded.map(s=>`  • ${s.name} [${data[s.id]}] (${s.room})`).join('\n')||'  -'}\n\n`;
+  text+=`📌 KODLU (${coded.length}):\n${coded.map(s=>{
+    const iz = getActiveIzin(s.id);
+    const saatStr = iz && iz.saatBitis ? ` ⏰ ${iz.saatBitis}'e kadar` : '';
+    return `  • ${s.name} [${data[s.id]}]${saatStr} (${s.room})`;
+  }).join('\n')||'  -'}\n\n`;
   text+=`✅ MEVCUT (${present.length}):\n${present.map(s=>`  • ${s.name}`).join('\n')||'  -'}`;
   if(navigator.share)navigator.share({title:'Yoklama',text}).catch(()=>{});
   else navigator.clipboard.writeText(text).then(()=>showToast('📋 Kopyalandı!'));
@@ -2497,11 +2845,18 @@ async function _buildPDF(weekStart) {
           });
         });
 
-        // Devam
+        // Devam — vakit bazında (kaç yoklamaya katıldı / toplam yapılan yoklama)
         let pC=0, tC=0;
         weekDates.forEach(({key}) => {
-          const v = getCellValue(floorData, key, s.id);
-          if (v) { tC++; if (v !== 'X') pC++; }
+          TIMES.forEach(vakit => {
+            const dayData = floorData[key] || {};
+            const vakitData = dayData[vakit] || {};
+            const val = vakitData[String(s.id)];
+            if(val !== undefined && val !== null){
+              tC++;
+              if(val === true) pC++;
+            }
+          });
         });
         const ok = tC === 0 || pC/tC >= 0.8;
         doc.setFontSize(4.8); doc.setFont('helvetica','bold');
