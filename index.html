@@ -2910,9 +2910,9 @@ async function _buildPDF(weekStart) {
     doc.setDrawColor(0); doc.setLineWidth(0.4);
     doc.line(ML + 3, y + H_SIGN - 10, ML + W_LEFT - 3, y + H_SIGN - 10);
 
-    // Müdür Yardımcısı adı
+    // Müdür Yardımcısı adı — imza çizgisinin üstünde
     doc.setFontSize(5); doc.setFont('helvetica','bold'); doc.setTextColor(0);
-    doc.text('Ertugrul DAGDELEN', ML + W_LEFT/2, y + 5, {align:'center'});
+    doc.text('Ertugrul DAGDELEN', ML + W_LEFT/2, y + H_SIGN - 13, {align:'center'});
 
     // Ünvan
     doc.setFontSize(4.5); doc.setFont('helvetica','bold'); doc.setTextColor(0);
