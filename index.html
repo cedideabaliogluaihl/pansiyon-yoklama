@@ -2900,11 +2900,26 @@ async function _buildPDF(weekStart) {
       const tj = await tr.json();
       if(tj) teacherNames = tj;
     }catch(e){}
-    // Sol boşluk (ODA+SNF+ISIM+ETUT) için boş alan
+    // Sol boşluk (ODA+SNF+ISIM+ETUT) için imza alanı — Müdür Yardımcısı
     doc.setFillColor(250,250,250);
     doc.rect(ML, y, W_LEFT, H_SIGN, 'F');
     doc.setDrawColor(0); doc.setLineWidth(0.3);
     doc.rect(ML, y, W_LEFT, H_SIGN, 'S');
+
+    // İmza çizgisi
+    doc.setDrawColor(0); doc.setLineWidth(0.4);
+    doc.line(ML + 3, y + H_SIGN - 10, ML + W_LEFT - 3, y + H_SIGN - 10);
+
+    // Müdür Yardımcısı adı
+    doc.setFontSize(5); doc.setFont('helvetica','bold'); doc.setTextColor(0);
+    doc.text('Ertugrul DAGDELEN', ML + W_LEFT/2, y + 5, {align:'center'});
+
+    // Ünvan
+    doc.setFontSize(4.5); doc.setFont('helvetica','bold'); doc.setTextColor(0);
+    doc.text('Mudur Yardimcisi', ML + W_LEFT/2, y + H_SIGN - 7.5, {align:'center'});
+
+    doc.setFontSize(3.8); doc.setFont('helvetica','normal'); doc.setTextColor(100);
+    doc.text('Ad Soyad / Imza', ML + W_LEFT/2, y + H_SIGN - 5.5, {align:'center'});
 
     // Her gün için imza kutusu — gün sütunuyla tam hizalı
     for(let di=0; di<weekDates.length; di++){
