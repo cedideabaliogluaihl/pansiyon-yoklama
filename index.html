@@ -413,12 +413,12 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
       </div>
     </div>
     <div class="time-selector">
-      <button class="time-btn active" data-time="Akşam" onclick="setTime('Akşam')">🌆 Akşam</button>
+      <button class="time-btn active" data-time="Akşam" onclick="setTime('Akşam')">🕌 Akşam Namazı</button>
       <button class="time-btn" data-time="Telefon" onclick="setTime('Telefon')">📞 Telefon</button>
       <button class="time-btn" data-time="Etüt" onclick="setTime('Etüt')">📚 Etüt</button>
-      <button class="time-btn" data-time="Yatsı" onclick="setTime('Yatsı')">🌙 Yatsı</button>
-      <button class="time-btn" data-time="Uyku" onclick="setTime('Uyku')">🛏 Uyku</button>
-      <button class="time-btn" data-time="Sabah" onclick="setTime('Sabah')">🌅 Sabah</button>
+      <button class="time-btn" data-time="Yatsı" onclick="setTime('Yatsı')">🕌 Yatsı Namazı</button>
+      <button class="time-btn" data-time="Uyku" onclick="setTime('Uyku')">🛏 Yat Yoklaması</button>
+      <button class="time-btn" data-time="Sabah" onclick="setTime('Sabah')">🌅 Sabah Namazı</button>
     </div>
     <!-- GÜNÜN PROGRAMI -->
     <div id="gunProgrami" style="display:none;padding:4px 12px 6px;background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto;white-space:nowrap;scrollbar-width:none;"></div>
@@ -1590,35 +1590,12 @@ function updateVakitSaatleri(){
   const cols = _cizelge.cols || [];
   const cells = _cizelge.cells || {};
 
-  // Vakit butonlarına saat yaz
+  // Vakit butonlarındaki eski saat notlarını temizle (program şeridinde gösteriliyor)
   TIMES.forEach(t => {
     const btn = document.querySelector(`.time-btn[data-time="${t}"]`);
     if(!btn) return;
-    let saat = '';
-    rows.forEach((row, r) => {
-      if(!row.label) return;
-      if(row.label.toLowerCase().includes(t.toLowerCase())){
-        const m = row.label.match(/\d{1,2}[:.]\d{2}/);
-        if(m){ saat = m[0]; return; }
-        cols.forEach((_,c) => {
-          const val = cells[r+'_'+c] || '';
-          const cm = val.match(/\d{1,2}[:.]\d{2}/);
-          if(cm && !saat) saat = cm[0];
-        });
-      }
-    });
-    let noteEl = btn.querySelector('.vakit-not');
-    if(saat){
-      if(!noteEl){
-        noteEl = document.createElement('span');
-        noteEl.className = 'vakit-not';
-        noteEl.style.cssText = 'display:block;font-size:9px;font-weight:600;opacity:0.85;margin-top:1px;';
-        btn.appendChild(noteEl);
-      }
-      noteEl.textContent = saat;
-    } else if(noteEl){
-      noteEl.remove();
-    }
+    const noteEl = btn.querySelector('.vakit-not');
+    if(noteEl) noteEl.remove();
   });
 
   // Günün Programı şeridi
@@ -2612,7 +2589,7 @@ async function buildPrintHTML(){
   const weekDates=getWeekDates();
   const weekLabel=`${weekDates[0].short} – ${weekDates[6].short}`;
   // Her vakit kısa adı
-  const VSHORT=['Akş','Etüt','Yats','Yatş','Sabh','Tel'];
+  const VSHORT=['Akş.N','Tel','Etüt','Yats.N','Yat.Y','Sab.N'];
 
   let html='';
 
@@ -2749,7 +2726,7 @@ async function exportExcel() {
   const wb = XLSX.utils.book_new();
   const weekDates = getWeekDates();
   const weekLabel = weekDates[0].short + ' - ' + weekDates[6].short;
-  const VAKITLER = ['Akşam','Etüt','Yatsı','Uyku','Sabah','Telefon'];
+  const VAKITLER = ['Akşam Namazı','Etüt','Yatsı Namazı','Yat Yoklaması','Sabah Namazı','Telefon'];
 
   for(const floor of [2, 3]) {
     const floorData = await getAllDataForFloor(floor);
@@ -2913,7 +2890,7 @@ async function _buildPDF(weekStart) {
     return{key, label:DAYS[i], short:dt.toLocaleDateString('tr-TR',{day:'2-digit',month:'2-digit'})};
   });
   // Vakit isimleri - ASCII only
-  const VAKITLER     = ['Aksam','Tel','Etut','Yatsi','Uyku','Sabah'];
+  const VAKITLER     = ['Aks.N','Tel','Etut','Yat.N','Yat.Y','Sab.N'];
   const VAKIT_KEYS   = ['Akşam','Telefon','Etüt','Yatsı','Uyku','Sabah'];
   const DAY_ABBR     = ['Pzt','Sal','Car','Per','Cum','Cmt','Paz'];
 
