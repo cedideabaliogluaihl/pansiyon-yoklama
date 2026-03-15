@@ -454,10 +454,11 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
     </div>
     <!-- Sekmeler -->
     <div style="display:flex;gap:6px;flex-wrap:wrap;">
-      <button id="tabAtama"   onclick="switchAdminTab('atama')"   style="flex:1;padding:8px;border-radius:8px;border:none;font-family:Rajdhani,sans-serif;font-weight:700;font-size:12px;cursor:pointer;background:var(--accent);color:#000;">📅 Nöbet</button>
-      <button id="tabListe"   onclick="switchAdminTab('liste')"   style="flex:1;padding:8px;border-radius:8px;border:none;font-family:Rajdhani,sans-serif;font-weight:700;font-size:12px;cursor:pointer;background:var(--surface2);color:var(--text);">👥 Öğretmen</button>
-      <button id="tabOgrenci" onclick="switchAdminTab('ogrenci')" style="flex:1;padding:8px;border-radius:8px;border:none;font-family:Rajdhani,sans-serif;font-weight:700;font-size:12px;cursor:pointer;background:var(--surface2);color:var(--text);">🎓 Öğrenci</button>
-      <button id="tabIzin"    onclick="switchAdminTab('izin')"    style="flex:1;padding:8px;border-radius:8px;border:none;font-family:Rajdhani,sans-serif;font-weight:700;font-size:12px;cursor:pointer;background:var(--surface2);color:var(--text);">📋 İzinler</button>
+      <button id="tabAtama"    onclick="switchAdminTab('atama')"    style="flex:1;padding:8px;border-radius:8px;border:none;font-family:Rajdhani,sans-serif;font-weight:700;font-size:12px;cursor:pointer;background:var(--accent);color:#000;">📅 Nöbet</button>
+      <button id="tabListe"    onclick="switchAdminTab('liste')"    style="flex:1;padding:8px;border-radius:8px;border:none;font-family:Rajdhani,sans-serif;font-weight:700;font-size:12px;cursor:pointer;background:var(--surface2);color:var(--text);">👥 Öğretmen</button>
+      <button id="tabOgrenci"  onclick="switchAdminTab('ogrenci')"  style="flex:1;padding:8px;border-radius:8px;border:none;font-family:Rajdhani,sans-serif;font-weight:700;font-size:12px;cursor:pointer;background:var(--surface2);color:var(--text);">🎓 Öğrenci</button>
+      <button id="tabIzin"     onclick="switchAdminTab('izin')"     style="flex:1;padding:8px;border-radius:8px;border:none;font-family:Rajdhani,sans-serif;font-weight:700;font-size:12px;cursor:pointer;background:var(--surface2);color:var(--text);">📋 İzinler</button>
+      <button id="tabCizelge"  onclick="switchAdminTab('cizelge')"  style="flex:1;padding:8px;border-radius:8px;border:none;font-family:Rajdhani,sans-serif;font-weight:700;font-size:12px;cursor:pointer;background:var(--surface2);color:var(--text);">🗓 Çizelge</button>
     </div>
     <!-- NÖBET ATAMA SEKMESİ -->
     <div id="panelAtama" style="display:flex;flex-direction:column;gap:8px;overflow-y:auto;flex:1;">
@@ -509,6 +510,21 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
       </div>
       <!-- Öğrenci + izin listesi -->
       <div id="izinPanelList" style="display:flex;flex-direction:column;gap:8px;overflow-y:auto;flex:1;"></div>
+    </div>
+
+    <!-- ÇİZELGE SEKMESİ -->
+    <div id="panelCizelge" style="display:none;flex-direction:column;gap:10px;flex:1;overflow:hidden;">
+      <div style="font-size:12px;color:var(--muted);">Satır ve sütun ekle, başlıklara istediğini yaz. Nöbetçi ekranında vakit butonlarının altında görünür.</div>
+      <!-- Araçlar -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button onclick="cizelgeSatirEkle()" style="padding:7px 12px;border-radius:8px;border:none;background:var(--accent);color:#000;font-weight:700;font-size:12px;cursor:pointer;">+ Satır</button>
+        <button onclick="cizelgeSutunEkle()" style="padding:7px 12px;border-radius:8px;border:none;background:var(--surface2);border:1px solid var(--border);color:var(--text);font-weight:700;font-size:12px;cursor:pointer;">+ Sütun</button>
+        <button onclick="cizelgeKaydet()" style="padding:7px 12px;border-radius:8px;border:none;background:#16a34a;color:#fff;font-weight:700;font-size:12px;cursor:pointer;">💾 Kaydet</button>
+      </div>
+      <!-- Tablo -->
+      <div style="overflow:auto;flex:1;">
+        <table id="cizelgeTable" style="border-collapse:collapse;width:100%;min-width:300px;font-size:12px;"></table>
+      </div>
     </div>
   </div>
 </div>
@@ -938,6 +954,8 @@ function goScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classLis
 window.addEventListener('load',()=>{
   // Admin şifresini Firebase'den yükle
   loadAdminPin().catch(()=>{});
+  // Çizelgeyi yükle ve vakit butonlarını güncelle
+  loadCizelge().then(()=>updateVakitSaatleri()).catch(()=>{});
   // PDF butonu sadece PC'de görünsün
   const isDesktop = window.innerWidth >= 768 && !/Mobi|Android/i.test(navigator.userAgent);
   if(isDesktop) document.getElementById('pdfBtn').style.display='';
@@ -1417,7 +1435,7 @@ let _izinPanelId = null;
 let _izinPanelKod = 'I';
 
 function switchAdminTab(tab){
-  ['atama','liste','ogrenci','izin'].forEach(t=>{
+  ['atama','liste','ogrenci','izin','cizelge'].forEach(t=>{
     const panelId = 'panel'+t.charAt(0).toUpperCase()+t.slice(1);
     const panel = document.getElementById(panelId);
     if(panel) panel.style.display = t===tab?'flex':'none';
@@ -1428,6 +1446,157 @@ function switchAdminTab(tab){
   if(tab==='atama') renderAtama();
   if(tab==='ogrenci'){ _ogrKatSec=2; switchOgrKat(2); }
   if(tab==='izin'){ _izinKatSec=2; switchIzinKat(2); }
+  if(tab==='cizelge') renderCizelge();
+}
+
+// ══════════════════════════════════════
+// ÇİZELGE
+// ══════════════════════════════════════
+let _cizelge = { rows: [], cols: [] }; // rows: [{label}], cols: [{label}], cells: {r_c: text}
+
+async function loadCizelge(){
+  try{
+    const r = await fetch(FB_URL+'/cizelge.json?'+Date.now(),{cache:'no-store'});
+    const j = await r.json();
+    if(j){ _cizelge = j; }
+    else { _cizelge = {rows:[], cols:[], cells:{}}; }
+  }catch(e){ _cizelge = {rows:[], cols:[], cells:{}}; }
+  if(!_cizelge.cells) _cizelge.cells = {};
+}
+
+async function cizelgeKaydet(){
+  // Tablodan güncel verileri oku
+  const table = document.getElementById('cizelgeTable');
+  // Sütun başlıkları
+  const ths = table.querySelectorAll('thead th input');
+  _cizelge.cols = Array.from(ths).slice(1).map(el => ({label: el.value})); // ilki satır başlığı
+  // Satır başlıkları ve hücreler
+  const trs = table.querySelectorAll('tbody tr');
+  _cizelge.rows = [];
+  _cizelge.cells = {};
+  trs.forEach((tr,r) => {
+    const tds = tr.querySelectorAll('td input');
+    _cizelge.rows.push({label: tds[0].value});
+    tds.forEach((inp,c) => {
+      if(c > 0) _cizelge.cells[r+'_'+(c-1)] = inp.value;
+    });
+  });
+  try{
+    await fetch(FB_URL+'/cizelge.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(_cizelge)});
+    showToast('✅ Çizelge kaydedildi');
+    // Vakit butonlarını güncelle
+    updateVakitSaatleri();
+  }catch(e){ showToast('⚠️ Kayıt başarısız'); }
+}
+
+function cizelgeSatirEkle(){
+  _cizelge.rows.push({label:''});
+  renderCizelge();
+}
+
+function cizelgeSutunEkle(){
+  _cizelge.cols.push({label:''});
+  renderCizelge();
+}
+
+function cizelgeSatirSil(r){
+  _cizelge.rows.splice(r,1);
+  // Hücreleri yeniden indexle
+  const newCells = {};
+  Object.keys(_cizelge.cells).forEach(k => {
+    const [kr,kc] = k.split('_').map(Number);
+    if(kr < r) newCells[k] = _cizelge.cells[k];
+    else if(kr > r) newCells[(kr-1)+'_'+kc] = _cizelge.cells[k];
+  });
+  _cizelge.cells = newCells;
+  renderCizelge();
+}
+
+function cizelgeSutunSil(c){
+  _cizelge.cols.splice(c,1);
+  const newCells = {};
+  Object.keys(_cizelge.cells).forEach(k => {
+    const [kr,kc] = k.split('_').map(Number);
+    if(kc < c) newCells[k] = _cizelge.cells[k];
+    else if(kc > c) newCells[kr+'_'+(kc-1)] = _cizelge.cells[k];
+  });
+  _cizelge.cells = newCells;
+  renderCizelge();
+}
+
+function renderCizelge(){
+  const table = document.getElementById('cizelgeTable');
+  if(!table) return;
+  const rows = _cizelge.rows || [];
+  const cols = _cizelge.cols || [];
+  const cells = _cizelge.cells || {};
+
+  const cellStyle = 'border:1px solid var(--border);padding:3px;min-width:80px;';
+  const inputStyle = 'width:100%;background:transparent;border:none;color:var(--text);font-size:11px;padding:3px 4px;outline:none;';
+
+  // Başlık satırı
+  let html = '<thead><tr>';
+  html += `<th style="${cellStyle}background:var(--surface2);min-width:120px;">
+    <input style="${inputStyle}font-weight:700;" placeholder="Etkinlik / Saat" value="" disabled>
+  </th>`;
+  cols.forEach((col,c) => {
+    html += `<th style="${cellStyle}background:var(--surface2);">
+      <div style="display:flex;align-items:center;gap:2px;">
+        <input style="${inputStyle}font-weight:700;" placeholder="Başlık..." value="${col.label||''}">
+        <button onclick="cizelgeSutunSil(${c})" style="padding:1px 4px;border-radius:4px;border:none;background:#dc2626;color:#fff;font-size:9px;cursor:pointer;flex-shrink:0;">✕</button>
+      </div>
+    </th>`;
+  });
+  html += '</tr></thead>';
+
+  // Satırlar
+  html += '<tbody>';
+  rows.forEach((row,r) => {
+    html += '<tr>';
+    html += `<td style="${cellStyle}background:var(--surface2);">
+      <div style="display:flex;align-items:center;gap:2px;">
+        <input style="${inputStyle}font-weight:700;" placeholder="Akşam Yoklaması 18:30" value="${row.label||''}">
+        <button onclick="cizelgeSatirSil(${r})" style="padding:1px 4px;border-radius:4px;border:none;background:#dc2626;color:#fff;font-size:9px;cursor:pointer;flex-shrink:0;">✕</button>
+      </div>
+    </td>`;
+    cols.forEach((_,c) => {
+      const val = cells[r+'_'+c] || '';
+      html += `<td style="${cellStyle}"><input style="${inputStyle}" placeholder="..." value="${val}"></td>`;
+    });
+    html += '</tr>';
+  });
+  html += '</tbody>';
+  table.innerHTML = html;
+}
+
+// Vakit butonlarının altına saat/not göster
+function updateVakitSaatleri(){
+  const rows = _cizelge.rows || [];
+  TIMES.forEach(t => {
+    const btn = document.querySelector(`.time-btn[data-time="${t}"]`);
+    if(!btn) return;
+    // Satır başlığında bu vakti ara
+    const match = rows.find(r => r.label && r.label.includes(t));
+    // Saati bul (HH:MM formatı)
+    let saat = '';
+    if(match){
+      const saatMatch = match.label.match(/\d{1,2}[:.]\d{2}/);
+      if(saatMatch) saat = saatMatch[0];
+    }
+    // Mevcut not span'ını güncelle veya ekle
+    let noteEl = btn.querySelector('.vakit-not');
+    if(saat){
+      if(!noteEl){
+        noteEl = document.createElement('span');
+        noteEl.className = 'vakit-not';
+        noteEl.style.cssText = 'display:block;font-size:9px;font-weight:600;opacity:0.8;margin-top:1px;';
+        btn.appendChild(noteEl);
+      }
+      noteEl.textContent = saat;
+    } else if(noteEl){
+      noteEl.remove();
+    }
+  });
 }
 
 function switchIzinKat(kat){
