@@ -454,11 +454,11 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
     </div>
     <!-- Sekmeler -->
     <div style="display:flex;gap:6px;flex-wrap:wrap;">
-      <button id="tabAtama"    onclick="switchAdminTab('atama')"    style="flex:1;padding:8px;border-radius:8px;border:none;font-family:Rajdhani,sans-serif;font-weight:700;font-size:12px;cursor:pointer;background:var(--accent);color:#000;">📅 Nöbet</button>
+      <button id="tabAtama"    onclick="switchAdminTab('atama')"    style="flex:1;padding:8px;border-radius:8px;border:none;font-family:Rajdhani,sans-serif;font-weight:700;font-size:12px;cursor:pointer;background:var(--accent);color:#000;">📅 Nöbet Ataması</button>
       <button id="tabListe"    onclick="switchAdminTab('liste')"    style="flex:1;padding:8px;border-radius:8px;border:none;font-family:Rajdhani,sans-serif;font-weight:700;font-size:12px;cursor:pointer;background:var(--surface2);color:var(--text);">👥 Öğretmen</button>
       <button id="tabOgrenci"  onclick="switchAdminTab('ogrenci')"  style="flex:1;padding:8px;border-radius:8px;border:none;font-family:Rajdhani,sans-serif;font-weight:700;font-size:12px;cursor:pointer;background:var(--surface2);color:var(--text);">🎓 Öğrenci</button>
       <button id="tabIzin"     onclick="switchAdminTab('izin')"     style="flex:1;padding:8px;border-radius:8px;border:none;font-family:Rajdhani,sans-serif;font-weight:700;font-size:12px;cursor:pointer;background:var(--surface2);color:var(--text);">📋 İzinler</button>
-      <button id="tabCizelge"  onclick="switchAdminTab('cizelge')"  style="flex:1;padding:8px;border-radius:8px;border:none;font-family:Rajdhani,sans-serif;font-weight:700;font-size:12px;cursor:pointer;background:var(--surface2);color:var(--text);">🗓 Çizelge</button>
+      <button id="tabCizelge"  onclick="switchAdminTab('cizelge')"  style="flex:1;padding:8px;border-radius:8px;border:none;font-family:Rajdhani,sans-serif;font-weight:700;font-size:12px;cursor:pointer;background:var(--surface2);color:var(--text);">🗓 Zaman Çizelgesi</button>
     </div>
     <!-- NÖBET ATAMA SEKMESİ -->
     <div id="panelAtama" style="display:flex;flex-direction:column;gap:8px;overflow-y:auto;flex:1;">
@@ -1532,18 +1532,18 @@ function renderCizelge(){
   const cells = _cizelge.cells || {};
 
   const cellStyle = 'border:1px solid var(--border);padding:3px;min-width:80px;';
-  const inputStyle = 'width:100%;background:transparent;border:none;color:var(--text);font-size:11px;padding:3px 4px;outline:none;';
+  const inputStyle = 'width:100%;background:transparent;border:none;color:var(--text);font-size:11px;padding:3px 4px;outline:none;box-sizing:border-box;';
 
   // Başlık satırı
   let html = '<thead><tr>';
-  html += `<th style="${cellStyle}background:var(--surface2);min-width:120px;">
-    <input style="${inputStyle}font-weight:700;" placeholder="Etkinlik / Saat" value="" disabled>
+  html += `<th style="${cellStyle}background:var(--surface2);min-width:150px;">
+    <input style="${inputStyle}font-weight:700;color:var(--accent);" value="Etkinlik" disabled>
   </th>`;
   cols.forEach((col,c) => {
     html += `<th style="${cellStyle}background:var(--surface2);">
       <div style="display:flex;align-items:center;gap:2px;">
-        <input style="${inputStyle}font-weight:700;" placeholder="Başlık..." value="${col.label||''}">
-        <button onclick="cizelgeSutunSil(${c})" style="padding:1px 4px;border-radius:4px;border:none;background:#dc2626;color:#fff;font-size:9px;cursor:pointer;flex-shrink:0;">✕</button>
+        <input style="${inputStyle}font-weight:700;" placeholder="Zaman..." value="${col.label||''}">
+        <button onclick="cizelgeSutunSil(${c})" style="padding:1px 5px;border-radius:4px;border:none;background:#dc2626;color:#fff;font-size:9px;cursor:pointer;flex-shrink:0;">✕</button>
       </div>
     </th>`;
   });
@@ -1555,8 +1555,8 @@ function renderCizelge(){
     html += '<tr>';
     html += `<td style="${cellStyle}background:var(--surface2);">
       <div style="display:flex;align-items:center;gap:2px;">
-        <input style="${inputStyle}font-weight:700;" placeholder="Akşam Yoklaması 18:30" value="${row.label||''}">
-        <button onclick="cizelgeSatirSil(${r})" style="padding:1px 4px;border-radius:4px;border:none;background:#dc2626;color:#fff;font-size:9px;cursor:pointer;flex-shrink:0;">✕</button>
+        <input style="${inputStyle}font-weight:600;" placeholder="Akşam Yemeği 18:30" value="${row.label||''}">
+        <button onclick="cizelgeSatirSil(${r})" style="padding:1px 5px;border-radius:4px;border:none;background:#dc2626;color:#fff;font-size:9px;cursor:pointer;flex-shrink:0;">✕</button>
       </div>
     </td>`;
     cols.forEach((_,c) => {
@@ -1569,27 +1569,41 @@ function renderCizelge(){
   table.innerHTML = html;
 }
 
-// Vakit butonlarının altına saat/not göster
+// Vakit butonlarının altına saat göster
+// Satır başlığında vakit adı geçiyorsa oradaki saati göster
 function updateVakitSaatleri(){
   const rows = _cizelge.rows || [];
+  const cols = _cizelge.cols || [];
+  const cells = _cizelge.cells || {};
+
   TIMES.forEach(t => {
     const btn = document.querySelector(`.time-btn[data-time="${t}"]`);
     if(!btn) return;
-    // Satır başlığında bu vakti ara
-    const match = rows.find(r => r.label && r.label.includes(t));
-    // Saati bul (HH:MM formatı)
+
     let saat = '';
-    if(match){
-      const saatMatch = match.label.match(/\d{1,2}[:.]\d{2}/);
-      if(saatMatch) saat = saatMatch[0];
-    }
-    // Mevcut not span'ını güncelle veya ekle
+    // Satır başlığında vakit adını ara (büyük/küçük harf fark etmez)
+    rows.forEach((row, r) => {
+      if(!row.label) return;
+      if(row.label.toLowerCase().includes(t.toLowerCase())){
+        // Önce satır başlığında saat ara
+        const m = row.label.match(/\d{1,2}[:.]\d{2}/);
+        if(m){ saat = m[0]; return; }
+        // Yoksa hücrelerde ara
+        cols.forEach((_,c) => {
+          const val = cells[r+'_'+c] || '';
+          const cm = val.match(/\d{1,2}[:.]\d{2}/);
+          if(cm && !saat) saat = cm[0];
+        });
+      }
+    });
+
+    // Buton altına not ekle/güncelle
     let noteEl = btn.querySelector('.vakit-not');
     if(saat){
       if(!noteEl){
         noteEl = document.createElement('span');
         noteEl.className = 'vakit-not';
-        noteEl.style.cssText = 'display:block;font-size:9px;font-weight:600;opacity:0.8;margin-top:1px;';
+        noteEl.style.cssText = 'display:block;font-size:9px;font-weight:600;opacity:0.85;margin-top:1px;';
         btn.appendChild(noteEl);
       }
       noteEl.textContent = saat;
