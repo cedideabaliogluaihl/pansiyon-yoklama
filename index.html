@@ -420,6 +420,8 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
       <button class="time-btn" data-time="Uyku" onclick="setTime('Uyku')">🛏 Uyku</button>
       <button class="time-btn" data-time="Sabah" onclick="setTime('Sabah')">🌅 Sabah</button>
     </div>
+    <!-- GÜNÜN PROGRAMI -->
+    <div id="gunProgrami" style="display:none;padding:4px 12px 6px;background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto;white-space:nowrap;scrollbar-width:none;"></div>
   </div>
 
   <div class="stats-bar">
@@ -1569,26 +1571,22 @@ function renderCizelge(){
   table.innerHTML = html;
 }
 
-// Vakit butonlarının altına saat göster
-// Satır başlığında vakit adı geçiyorsa oradaki saati göster
+// Vakit butonlarına saat göster + Günün Programı şeridini doldur
 function updateVakitSaatleri(){
   const rows = _cizelge.rows || [];
   const cols = _cizelge.cols || [];
   const cells = _cizelge.cells || {};
 
+  // Vakit butonlarına saat yaz
   TIMES.forEach(t => {
     const btn = document.querySelector(`.time-btn[data-time="${t}"]`);
     if(!btn) return;
-
     let saat = '';
-    // Satır başlığında vakit adını ara (büyük/küçük harf fark etmez)
     rows.forEach((row, r) => {
       if(!row.label) return;
       if(row.label.toLowerCase().includes(t.toLowerCase())){
-        // Önce satır başlığında saat ara
         const m = row.label.match(/\d{1,2}[:.]\d{2}/);
         if(m){ saat = m[0]; return; }
-        // Yoksa hücrelerde ara
         cols.forEach((_,c) => {
           const val = cells[r+'_'+c] || '';
           const cm = val.match(/\d{1,2}[:.]\d{2}/);
@@ -1596,8 +1594,6 @@ function updateVakitSaatleri(){
         });
       }
     });
-
-    // Buton altına not ekle/güncelle
     let noteEl = btn.querySelector('.vakit-not');
     if(saat){
       if(!noteEl){
@@ -1611,6 +1607,34 @@ function updateVakitSaatleri(){
       noteEl.remove();
     }
   });
+
+  // Günün Programı şeridi
+  const strip = document.getElementById('gunProgrami');
+  if(!strip) return;
+  if(!rows.length){ strip.style.display='none'; return; }
+
+  strip.style.display = 'block';
+  strip.innerHTML = rows.map(row => {
+    if(!row.label) return '';
+    // Saati satır başlığından veya hücrelerden bul
+    let saat = '';
+    const ri = rows.indexOf(row);
+    const m = row.label.match(/\d{1,2}[:.]\d{2}/);
+    if(m) saat = m[0];
+    else {
+      cols.forEach((_,c) => {
+        const val = cells[ri+'_'+c] || '';
+        const cm = val.match(/\d{1,2}[:.]\d{2}/);
+        if(cm && !saat) saat = cm[0];
+      });
+    }
+    // Etkinlik adı (saatten önceki kısım)
+    const etkinlik = row.label.replace(/\d{1,2}[:.]\d{2}/,'').trim();
+    return `<span style="display:inline-flex;align-items:center;gap:4px;margin-right:10px;padding:3px 8px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);font-size:10px;color:var(--text);">
+      ${saat ? `<span style="color:var(--accent);font-weight:700;">${saat}</span>` : ''}
+      <span>${etkinlik}</span>
+    </span>`;
+  }).join('');
 }
 
 function switchIzinKat(kat){
