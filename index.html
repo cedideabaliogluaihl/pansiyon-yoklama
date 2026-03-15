@@ -1467,26 +1467,39 @@ async function loadCizelge(){
 }
 
 async function cizelgeKaydet(){
-  // Tablodan güncel verileri oku
   const table = document.getElementById('cizelgeTable');
-  // Sütun başlıkları
-  const ths = table.querySelectorAll('thead th input');
-  _cizelge.cols = Array.from(ths).slice(1).map(el => ({label: el.value})); // ilki satır başlığı
-  // Satır başlıkları ve hücreler
-  const trs = table.querySelectorAll('tbody tr');
-  _cizelge.rows = [];
-  _cizelge.cells = {};
-  trs.forEach((tr,r) => {
-    const tds = tr.querySelectorAll('td input');
-    _cizelge.rows.push({label: tds[0].value});
-    tds.forEach((inp,c) => {
-      if(c > 0) _cizelge.cells[r+'_'+(c-1)] = inp.value;
+  const newRows = [];
+  const newCols = [];
+  const newCells = {};
+
+  // Sütun başlıklarını oku (thead'deki th inputları, ilki Etkinlik sabit)
+  const headThs = table.querySelectorAll('thead tr th');
+  headThs.forEach((th, i) => {
+    if(i === 0) return; // Etkinlik sütunu sabit
+    const inp = th.querySelector('input');
+    if(inp) newCols.push({label: inp.value});
+  });
+
+  // Satırları oku
+  const bodyTrs = table.querySelectorAll('tbody tr');
+  bodyTrs.forEach((tr, r) => {
+    const tds = tr.querySelectorAll('td');
+    const rowLabel = tds[0] ? (tds[0].querySelector('input') ? tds[0].querySelector('input').value : '') : '';
+    newRows.push({label: rowLabel});
+    tds.forEach((td, c) => {
+      if(c === 0) return;
+      const inp = td.querySelector('input');
+      if(inp) newCells[r+'_'+(c-1)] = inp.value;
     });
   });
+
+  _cizelge.rows = newRows;
+  _cizelge.cols = newCols;
+  _cizelge.cells = newCells;
+
   try{
     await fetch(FB_URL+'/cizelge.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(_cizelge)});
     showToast('✅ Çizelge kaydedildi');
-    // Vakit butonlarını güncelle
     updateVakitSaatleri();
   }catch(e){ showToast('⚠️ Kayıt başarısız'); }
 }
