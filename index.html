@@ -823,7 +823,11 @@ let attendance={}, attendanceHistory={}, currentTime='Akşam';
 let filterText='', filterRoomVal='', reportVakit='Akşam';
 let saveTimer=null, isSaving=false;
 
-const today = new Date();
+// Nöbet günü sabah 09:00'da değişir — gece 00:00-09:00 arası hala önceki gün sayılır
+const _now = new Date();
+const today = _now.getHours() < 9
+  ? new Date(_now.getFullYear(), _now.getMonth(), _now.getDate() - 1)
+  : new Date(_now.getFullYear(), _now.getMonth(), _now.getDate());
 const todayKey = today.getFullYear() + '_' +
   String(today.getMonth()+1).padStart(2,'0') + '_' +
   String(today.getDate()).padStart(2,'0');
