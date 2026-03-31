@@ -972,6 +972,20 @@ async function getAllDataForFloor(floor){
   return result;
 }
 
+async function getLocksDataForFloor(floor){
+  const weekDates=getWeekDates();
+  const result={};
+  for(const {key} of weekDates){
+    try{
+      const fbKey='f'+floor+'_'+key;
+      const r=await fetch(FB_URL+'/locks/'+fbKey+'.json?'+Date.now(),{cache:'no-store'});
+      const j=await r.json();
+      result[key]=Array.isArray(j)?j:[];
+    }catch(e){ result[key]=[]; }
+  }
+  return result;
+}
+
 // ── NAV ──
 function goScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
 // ── SAYFA YÜKLENINCE ──
@@ -2985,6 +2999,7 @@ async function _buildPDF(weekStart) {
     if (floorIdx > 0) doc.addPage();
 
     const floorData    = await getAllDataForFloor(floor);
+    const locksData    = await getLocksDataForFloor(floor);
     const floorStudents= FLOORS[floor].students;
     const rooms        = [...new Set(floorStudents.map(s => s.room))];
     const ROW_H        = H_AVAIL / floorStudents.length; // tam sığacak şekilde
@@ -3086,23 +3101,45 @@ async function _buildPDF(weekStart) {
         // Yoklama hücreleri
         weekDates.forEach((dd, di) => {
           const dayData = floorData[dd.key] || {};
-          // O günde herhangi bir vakitte en az bir öğrenci TRUE işaretlenmişse yoklama alınmış sayılır
-          const dayHasData = VAKIT_KEYS.some(vakit => {
-            const vd = dayData[vakit] || {};
-            return Object.values(vd).some(v => v === true || v === 1);
-          });
+          const dayLocks = locksData[dd.key] || [];
+
           VAKIT_KEYS.forEach((vakit, vi) => {
             const vd = dayData[vakit] || {};
             const st = vd[String(s.id)];
             const vx = X_DAYS + (di * 6 + vi) * VW;
             let txt = '', r=0, g=0, b=0, fs=5.5;
-            if      (st === true)  { txt='+'; r=0;   g=130; b=0;   fs=6; }
-            else if (st === false && dayHasData) { txt='-'; r=180; g=0; b=0; } // Yoklama alınmış ama gelmemiş
-            else if (st === 'I')  { txt='I'; r=90;  g=0;   b=180; }
-            else if (st === 'R')  { txt='R'; r=180; g=60;  b=0; }
-            else if (st === 'G')  { txt='G'; r=130; g=90;  b=0; }
-            else if (st === 'E')  { txt='E'; r=0;   g=60;  b=180; }
-            // dayHasData=false → yoklama hiç alınmamış → boş bırak
+
+            // O vakit kilitlenmişse yoklama alınmış demektir
+            const vakitLocked = dayLocks.includes(vakit);
+
+            if (st === true) {
+              txt='+'; r=0; g=130; b=0; fs=6;
+            } else if (typeof st === 'string') {
+              // İzin/Rapor/Evci — ama saat kontrolü yap
+              // Eğer izin bitiş saati geçmişse ve bu vakit kilitliyse gerçek yoklama sonucu göster
+              const izinList = (_izinler[String(s.id)]||[]);
+              const dateStr = dd.key.replace(/_/g,'-');
+              const aktifIzin = izinList.find(iz => iz.baslangic<=dateStr && iz.bitis>=dateStr && iz.kod===st);
+              // Saatli izin kontrolü — bu vakit izin saatinden sonraysa gösterme
+              let gosterIzin = true;
+              if(aktifIzin && aktifIzin.saatBitis && dateStr === aktifIzin.bitis){
+                // Vakit sırasına göre saat tahmini
+                const vakitSaatleri = {'Akşam':'19:00','Telefon':'20:00','Etüt':'20:30','Yatsı':'21:30','Uyku':'23:00','Sabah':'07:00'};
+                const vakitSaat = vakitSaatleri[vakit]||'00:00';
+                if(vakitSaat > aktifIzin.saatBitis) gosterIzin = false;
+              }
+              if(gosterIzin){
+                if(st==='I'){txt='I';r=90;g=0;b=180;}
+                else if(st==='R'){txt='R';r=180;g=60;b=0;}
+                else if(st==='E'){txt='E';r=0;g=60;b=180;}
+              } else if(vakitLocked){
+                txt='-'; r=180; g=0; b=0;
+              }
+            } else if (st === false && vakitLocked) {
+              txt='-'; r=180; g=0; b=0;
+            }
+            // vakitLocked=false → yoklama alınmamış → boş bırak
+
             if (txt) {
               doc.setFontSize(fs); doc.setFont('helvetica','bold'); doc.setTextColor(r,g,b);
               doc.text(txt, vx + VW/2, ty, {align:'center'});
