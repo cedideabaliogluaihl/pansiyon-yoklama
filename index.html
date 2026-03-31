@@ -3117,8 +3117,9 @@ async function _buildPDF(weekStart) {
             const vx = X_DAYS + (di * 6 + vi) * VW;
             let txt = '', r=0, g=0, b=0, fs=5.5;
 
-            // O vakitte yoklama alınmış mı? En az bir öğrenci true ise alınmış
-            const vakitAlindi = Object.values(vd).some(v => v === true || v === 1);
+            // O vakitte yoklama alınmış mı? Kilit varsa kesin alınmış, yoksa true/string var mı bak
+            const vakitAlindi = (locksData[dd.key]||[]).includes(vakit) || 
+                                Object.values(vd).some(v => v === true || v === 1);
 
             if (st === true || st === 1) {
               txt='+'; r=0; g=130; b=0; fs=6;
