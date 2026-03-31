@@ -3086,17 +3086,23 @@ async function _buildPDF(weekStart) {
         // Yoklama hücreleri
         weekDates.forEach((dd, di) => {
           const dayData = floorData[dd.key] || {};
+          // O günde herhangi bir vakit alınmış mı kontrol et
+          const dayHasData = VAKIT_KEYS.some(vakit => {
+            const vd = dayData[vakit] || {};
+            return Object.keys(vd).length > 0;
+          });
           VAKIT_KEYS.forEach((vakit, vi) => {
             const vd = dayData[vakit] || {};
             const st = vd[String(s.id)];
             const vx = X_DAYS + (di * 6 + vi) * VW;
             let txt = '', r=0, g=0, b=0, fs=5.5;
             if      (st === true)  { txt='+'; r=0;   g=130; b=0;   fs=6; }
-            else if (st === false) { txt='-'; r=180; g=0;   b=0; }
+            else if (st === false && dayHasData) { txt='-'; r=180; g=0; b=0; } // Yoklama alınmış ama gelmemiş
             else if (st === 'I')  { txt='I'; r=90;  g=0;   b=180; }
             else if (st === 'R')  { txt='R'; r=180; g=60;  b=0; }
             else if (st === 'G')  { txt='G'; r=130; g=90;  b=0; }
             else if (st === 'E')  { txt='E'; r=0;   g=60;  b=180; }
+            // dayHasData=false → yoklama hiç alınmamış → boş bırak
             if (txt) {
               doc.setFontSize(fs); doc.setFont('helvetica','bold'); doc.setTextColor(r,g,b);
               doc.text(txt, vx + VW/2, ty, {align:'center'});
