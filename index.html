@@ -847,8 +847,19 @@ const FB_URL = 'https://yokama-default-rtdb.firebaseio.com';
 
 async function saveToCloud(floor, dateKey, data){
   const key = 'f'+floor+'_'+dateKey;
-  // Firebase false değerlerini siliyor — 0 olarak kaydet
-  const firebaseData = JSON.parse(JSON.stringify(data, (k,v) => v === false ? 0 : v));
+  // false değerleri Firebase'e kaydetme — sadece true ve kodları kaydet
+  const firebaseData = {};
+  Object.keys(data).forEach(vakit => {
+    const vakitData = data[vakit];
+    if(!vakitData || typeof vakitData !== 'object') return;
+    const filtered = {};
+    Object.keys(vakitData).forEach(id => {
+      if(vakitData[id] !== false && vakitData[id] !== null && vakitData[id] !== undefined){
+        filtered[id] = vakitData[id];
+      }
+    });
+    if(Object.keys(filtered).length > 0) firebaseData[vakit] = filtered;
+  });
   try{
     await fetch(FB_URL+'/yoklama/'+key+'.json', {
       method:'PUT',
@@ -868,10 +879,8 @@ async function loadFromCloud(floor, dateKey){
     const res = await fetch(FB_URL+'/yoklama/'+key+'.json?'+Date.now(), {cache:'no-store'});
     const raw = await res.json();
     if(raw){
-      // 0 → false'a çevir
-      const data = JSON.parse(JSON.stringify(raw, (k,v) => v === 0 ? false : v));
-      localStorage.setItem('yoklama_'+key, JSON.stringify(data));
-      return data;
+      localStorage.setItem('yoklama_'+key, JSON.stringify(raw));
+      return raw;
     }
   }catch(e){}
   try{ const s=localStorage.getItem('yoklama_'+key); return s?JSON.parse(s):{}; }catch(e){ return {}; }
@@ -3101,7 +3110,6 @@ async function _buildPDF(weekStart) {
         // Yoklama hücreleri
         weekDates.forEach((dd, di) => {
           const dayData = floorData[dd.key] || {};
-          const dayLocks = locksData[dd.key] || [];
 
           VAKIT_KEYS.forEach((vakit, vi) => {
             const vd = dayData[vakit] || {};
@@ -3109,21 +3117,18 @@ async function _buildPDF(weekStart) {
             const vx = X_DAYS + (di * 6 + vi) * VW;
             let txt = '', r=0, g=0, b=0, fs=5.5;
 
-            // O vakit kilitlenmişse yoklama alınmış demektir
-            const vakitLocked = dayLocks.includes(vakit);
+            // O vakitte yoklama alınmış mı? En az bir öğrenci true ise alınmış
+            const vakitAlindi = Object.values(vd).some(v => v === true || v === 1);
 
-            if (st === true) {
+            if (st === true || st === 1) {
               txt='+'; r=0; g=130; b=0; fs=6;
             } else if (typeof st === 'string') {
-              // İzin/Rapor/Evci — ama saat kontrolü yap
-              // Eğer izin bitiş saati geçmişse ve bu vakit kilitliyse gerçek yoklama sonucu göster
+              // İzin/Rapor/Evci — saat kontrolü
               const izinList = (_izinler[String(s.id)]||[]);
               const dateStr = dd.key.replace(/_/g,'-');
               const aktifIzin = izinList.find(iz => iz.baslangic<=dateStr && iz.bitis>=dateStr && iz.kod===st);
-              // Saatli izin kontrolü — bu vakit izin saatinden sonraysa gösterme
               let gosterIzin = true;
               if(aktifIzin && aktifIzin.saatBitis && dateStr === aktifIzin.bitis){
-                // Vakit sırasına göre saat tahmini
                 const vakitSaatleri = {'Akşam':'19:00','Telefon':'20:00','Etüt':'20:30','Yatsı':'21:30','Uyku':'23:00','Sabah':'07:00'};
                 const vakitSaat = vakitSaatleri[vakit]||'00:00';
                 if(vakitSaat > aktifIzin.saatBitis) gosterIzin = false;
@@ -3132,13 +3137,13 @@ async function _buildPDF(weekStart) {
                 if(st==='I'){txt='I';r=90;g=0;b=180;}
                 else if(st==='R'){txt='R';r=180;g=60;b=0;}
                 else if(st==='E'){txt='E';r=0;g=60;b=180;}
-              } else if(vakitLocked){
+              } else if(vakitAlindi){
                 txt='-'; r=180; g=0; b=0;
               }
-            } else if (st === false && vakitLocked) {
+            } else if ((st === false || st === 0) && vakitAlindi) {
               txt='-'; r=180; g=0; b=0;
             }
-            // vakitLocked=false → yoklama alınmamış → boş bırak
+            // vakitAlindi=false → yoklama alınmamış → boş bırak
 
             if (txt) {
               doc.setFontSize(fs); doc.setFont('helvetica','bold'); doc.setTextColor(r,g,b);
