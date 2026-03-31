@@ -3086,10 +3086,10 @@ async function _buildPDF(weekStart) {
         // Yoklama hücreleri
         weekDates.forEach((dd, di) => {
           const dayData = floorData[dd.key] || {};
-          // O günde herhangi bir vakit alınmış mı kontrol et
+          // O günde herhangi bir vakitte en az bir öğrenci TRUE işaretlenmişse yoklama alınmış sayılır
           const dayHasData = VAKIT_KEYS.some(vakit => {
             const vd = dayData[vakit] || {};
-            return Object.keys(vd).length > 0;
+            return Object.values(vd).some(v => v === true || v === 1);
           });
           VAKIT_KEYS.forEach((vakit, vi) => {
             const vd = dayData[vakit] || {};
