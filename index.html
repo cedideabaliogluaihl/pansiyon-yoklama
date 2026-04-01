@@ -2967,6 +2967,9 @@ async function _buildPDF(weekStart) {
   showToast('⏳ PDF hazırlanıyor...');
   await new Promise(r=>setTimeout(r,100));
 
+  // İzinleri taze yükle
+  await loadIzinler();
+
   const { jsPDF } = window.jspdf;
   // Seçilen haftanın günlerini üret
   const weekDates = Array.from({length:7},(_,i)=>{
@@ -3130,8 +3133,24 @@ async function _buildPDF(weekStart) {
               const aktifIzin = izinList.find(iz => iz.baslangic<=dateStr && iz.bitis>=dateStr && iz.kod===st);
               let gosterIzin = true;
               if(aktifIzin && aktifIzin.saatBitis && dateStr === aktifIzin.bitis){
-                const vakitSaatleri = {'Akşam':'19:00','Telefon':'20:00','Etüt':'20:30','Yatsı':'21:30','Uyku':'23:00','Sabah':'07:00'};
-                const vakitSaat = vakitSaatleri[vakit]||'00:00';
+                // Zaman çizelgesinden vakit saatini bul, yoksa varsayılan kullan
+                const varsayilanSaatler = {'Akşam':'19:00','Telefon':'20:00','Etüt':'20:30','Yatsı':'21:30','Uyku':'23:00','Sabah':'07:00'};
+                let vakitSaat = varsayilanSaatler[vakit] || '00:00';
+                // Zaman çizelgesinde bu vakit için saat var mı?
+                const cizelgeRows = (_cizelge.rows||[]);
+                cizelgeRows.forEach((row,ri) => {
+                  if(row.label && row.label.toLowerCase().includes(vakit.toLowerCase())){
+                    const m = row.label.match(/\d{1,2}[:.]\d{2}/);
+                    if(m) vakitSaat = m[0].replace('.',':');
+                    else {
+                      (_cizelge.cols||[]).forEach((_,ci) => {
+                        const cv = (_cizelge.cells||{})[ri+'_'+ci]||'';
+                        const cm = cv.match(/\d{1,2}[:.]\d{2}/);
+                        if(cm) vakitSaat = cm[0].replace('.',':');
+                      });
+                    }
+                  }
+                });
                 if(vakitSaat > aktifIzin.saatBitis) gosterIzin = false;
               }
               if(gosterIzin){
