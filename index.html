@@ -2233,9 +2233,10 @@ function getActiveIzin(studentId){
 
   return list.find(iz => {
     if(iz.baslangic > activeDate || iz.bitis < activeDate) return false;
-    // Bitiş saati varsa: sadece bitiş günündeyse ve saat geçmişse izin bitti
-    if(iz.saatBitis && activeDate === iz.bitis && activeDate === todayStr){
-      return nowTime <= iz.saatBitis;
+    // Bitiş saati varsa
+    if(iz.saatBitis && activeDate === iz.bitis){
+      if(activeDate < todayStr) return false; // Bitiş günü geçmiş — izin bitti
+      if(activeDate === todayStr) return nowTime <= iz.saatBitis; // Bugün — saate bak
     }
     return true;
   }) || null;
