@@ -2233,10 +2233,45 @@ function getActiveIzin(studentId){
 
   return list.find(iz => {
     if(iz.baslangic > activeDate || iz.bitis < activeDate) return false;
-    // Bitiş saati varsa
-    if(iz.saatBitis && activeDate === iz.bitis){
-      if(activeDate < todayStr) return false; // Bitiş günü geçmiş — izin bitti
-      if(activeDate === todayStr) return nowTime <= iz.saatBitis; // Bugün — saate bak
+    // Bitiş saati varsa ve bugün bitiş günüyse saate bak
+    if(iz.saatBitis && activeDate === iz.bitis && activeDate === todayStr){
+      return nowTime <= iz.saatBitis;
+    }
+    // Bitiş saati var ama bitiş günü geçmişse izin bitti
+    if(iz.saatBitis && iz.bitis < todayStr){
+      return false;
+    }
+    return true;
+  }) || null;
+}
+
+// PDF için izin kontrolü — belirli bir tarih ve vakit için
+function getIzinForPDF(studentId, dateStr, vakit){
+  const list = _izinler[String(studentId)] || [];
+  const vakitSaatleri = {'Akşam':'19:00','Telefon':'20:00','Etüt':'20:30','Yatsı':'21:30','Uyku':'23:00','Sabah':'07:00'};
+  
+  // Zaman çizelgesinden vakit saatini al
+  let vakitSaat = vakitSaatleri[vakit] || '00:00';
+  const cizelgeRows = (_cizelge.rows||[]);
+  cizelgeRows.forEach((row,ri) => {
+    if(row.label && row.label.toLowerCase().includes(vakit.toLowerCase())){
+      const m = row.label.match(/\d{1,2}[:.]\d{2}/);
+      if(m) vakitSaat = m[0].replace('.',':');
+      else {
+        (_cizelge.cols||[]).forEach((_,ci) => {
+          const cv = (_cizelge.cells||{})[ri+'_'+ci]||'';
+          const cm = cv.match(/\d{1,2}[:.]\d{2}/);
+          if(cm) vakitSaat = cm[0].replace('.',':');
+        });
+      }
+    }
+  });
+
+  return list.find(iz => {
+    if(iz.baslangic > dateStr || iz.bitis < dateStr) return false;
+    // Bitiş saati varsa ve bitiş günündeyse vakit saatiyle karşılaştır
+    if(iz.saatBitis && dateStr === iz.bitis){
+      return vakitSaat <= iz.saatBitis;
     }
     return true;
   }) || null;
@@ -3128,33 +3163,10 @@ async function _buildPDF(weekStart) {
             if (st === true || st === 1) {
               txt='+'; r=0; g=130; b=0; fs=6;
             } else if (typeof st === 'string') {
-              // İzin/Rapor/Evci — saat kontrolü
-              const izinList = (_izinler[String(s.id)]||[]);
+              // İzin/Rapor/Evci — PDF özel saat kontrolü
               const dateStr = dd.key.replace(/_/g,'-');
-              const aktifIzin = izinList.find(iz => iz.baslangic<=dateStr && iz.bitis>=dateStr && iz.kod===st);
-              let gosterIzin = true;
-              if(aktifIzin && aktifIzin.saatBitis && dateStr === aktifIzin.bitis){
-                // Zaman çizelgesinden vakit saatini bul, yoksa varsayılan kullan
-                const varsayilanSaatler = {'Akşam':'19:00','Telefon':'20:00','Etüt':'20:30','Yatsı':'21:30','Uyku':'23:00','Sabah':'07:00'};
-                let vakitSaat = varsayilanSaatler[vakit] || '00:00';
-                // Zaman çizelgesinde bu vakit için saat var mı?
-                const cizelgeRows = (_cizelge.rows||[]);
-                cizelgeRows.forEach((row,ri) => {
-                  if(row.label && row.label.toLowerCase().includes(vakit.toLowerCase())){
-                    const m = row.label.match(/\d{1,2}[:.]\d{2}/);
-                    if(m) vakitSaat = m[0].replace('.',':');
-                    else {
-                      (_cizelge.cols||[]).forEach((_,ci) => {
-                        const cv = (_cizelge.cells||{})[ri+'_'+ci]||'';
-                        const cm = cv.match(/\d{1,2}[:.]\d{2}/);
-                        if(cm) vakitSaat = cm[0].replace('.',':');
-                      });
-                    }
-                  }
-                });
-                if(vakitSaat > aktifIzin.saatBitis) gosterIzin = false;
-              }
-              if(gosterIzin){
+              const izin = getIzinForPDF(String(s.id), dateStr, vakit);
+              if(izin){
                 if(st==='I'){txt='I';r=90;g=0;b=180;}
                 else if(st==='R'){txt='R';r=180;g=60;b=0;}
                 else if(st==='E'){txt='E';r=0;g=60;b=180;}
