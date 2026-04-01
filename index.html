@@ -967,8 +967,8 @@ async function loadFromStorage(floor){
 }
 
 // ── Haftalık veri çekme ──
-async function getAllDataForFloor(floor){
-  const weekDates=getWeekDates();
+async function getAllDataForFloor(floor, weekDatesParam){
+  const weekDates = weekDatesParam || getWeekDates();
   const result={};
   for(const {key} of weekDates){
     if(floor===currentFloor && key===(window._activeKey||todayKey)){
@@ -3046,7 +3046,7 @@ async function _buildPDF(weekStart) {
   for(const [floorIdx, floor] of [[0,2],[1,3]]) {
     if (floorIdx > 0) doc.addPage();
 
-    const floorData    = await getAllDataForFloor(floor);
+    const floorData    = await getAllDataForFloor(floor, weekDates);
     const locksData    = await getLocksDataForFloor(floor, weekDates);
     const floorStudents= FLOORS[floor].students;
     const rooms        = [...new Set(floorStudents.map(s => s.room))];
