@@ -492,7 +492,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
         </div>
         <div style="display:flex;gap:6px;">
           <input id="newStudentRoom" placeholder="Oda No" type="number" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:12px;">
-          <input id="newStudentEtut" placeholder="Etüt" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:12px;">
+          <input id="newStudentEtut" placeholder="Etüt No (103)" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:12px;">
           <button onclick="addStudent()" style="flex:1;padding:8px;border-radius:8px;border:none;background:var(--accent);color:#000;font-weight:700;font-size:12px;cursor:pointer;">Ekle</button>
         </div>
       </div>
@@ -2494,7 +2494,7 @@ function renderAll(){
       html+=`<div class="${rowCls}" id="row-${s.id}" onclick="${isAdmin?'':('toggle('+s.id+')')}">
         <div class="student-info">
           <div class="student-name">${s.name}</div>
-          <div class="student-meta">${s.cls} • Oda ${s.room}${!isAdmin && activeIzin ? ` <span style="color:var(--accent);font-size:10px;">${activeIzin.baslangic===activeIzin.bitis ? activeIzin.baslangic : activeIzin.baslangic+' → '+activeIzin.bitis}${activeIzin.saatBitis ? ' • ⏰ '+activeIzin.saatBitis+'\'e kadar' : ''} izinli</span>` : ''}</div>
+          <div class="student-meta">${s.cls} • Oda ${s.room} • Etüt ${s.etut||'-'}${!isAdmin && activeIzin ? ` <span style="color:var(--accent);font-size:10px;">${activeIzin.baslangic===activeIzin.bitis ? activeIzin.baslangic : activeIzin.baslangic+' → '+activeIzin.bitis}${activeIzin.saatBitis ? ' • ⏰ '+activeIzin.saatBitis+'\'e kadar' : ''} izinli</span>` : ''}</div>
         </div>
         <div class="status-area" style="display:flex;align-items:center;gap:6px;">${adminHtml}${nobetciIzin}${tickHtml}</div>
       </div>`;
