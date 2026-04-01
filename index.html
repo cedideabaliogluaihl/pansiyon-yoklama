@@ -1187,6 +1187,8 @@ function cancelPinPopup(){
 }
 
 async function continueStartApp(floor, selectedKey){
+  currentFloor = floor; // Her ihtimale karşı burada da set et
+  students = FLOORS[floor].students;
   attendance=Object.fromEntries(students.map(s=>[String(s.id),false]));
   attendanceHistory={}; currentTime='Akşam';
   // Header
