@@ -981,10 +981,10 @@ async function getAllDataForFloor(floor){
   return result;
 }
 
-async function getLocksDataForFloor(floor){
-  const weekDates=getWeekDates();
+async function getLocksDataForFloor(floor, weekDatesParam){
+  const dates = weekDatesParam || getWeekDates();
   const result={};
-  for(const {key} of weekDates){
+  for(const {key} of dates){
     try{
       const fbKey='f'+floor+'_'+key;
       const r=await fetch(FB_URL+'/locks/'+fbKey+'.json?'+Date.now(),{cache:'no-store'});
@@ -3012,7 +3012,7 @@ async function _buildPDF(weekStart) {
     if (floorIdx > 0) doc.addPage();
 
     const floorData    = await getAllDataForFloor(floor);
-    const locksData    = await getLocksDataForFloor(floor);
+    const locksData    = await getLocksDataForFloor(floor, weekDates);
     const floorStudents= FLOORS[floor].students;
     const rooms        = [...new Set(floorStudents.map(s => s.room))];
     const ROW_H        = H_AVAIL / floorStudents.length; // tam sığacak şekilde
