@@ -847,19 +847,8 @@ const FB_URL = 'https://yokama-default-rtdb.firebaseio.com';
 
 async function saveToCloud(floor, dateKey, data){
   const key = 'f'+floor+'_'+dateKey;
-  // false değerleri Firebase'e kaydetme — sadece true ve kodları kaydet
-  const firebaseData = {};
-  Object.keys(data).forEach(vakit => {
-    const vakitData = data[vakit];
-    if(!vakitData || typeof vakitData !== 'object') return;
-    const filtered = {};
-    Object.keys(vakitData).forEach(id => {
-      if(vakitData[id] !== false && vakitData[id] !== null && vakitData[id] !== undefined){
-        filtered[id] = vakitData[id];
-      }
-    });
-    if(Object.keys(filtered).length > 0) firebaseData[vakit] = filtered;
-  });
+  // false → 0 olarak kaydet (Firebase null/false silikyor)
+  const firebaseData = JSON.parse(JSON.stringify(data, (k,v) => v === false ? 0 : v));
   try{
     await fetch(FB_URL+'/yoklama/'+key+'.json', {
       method:'PUT',
@@ -879,8 +868,9 @@ async function loadFromCloud(floor, dateKey){
     const res = await fetch(FB_URL+'/yoklama/'+key+'.json?'+Date.now(), {cache:'no-store'});
     const raw = await res.json();
     if(raw){
-      localStorage.setItem('yoklama_'+key, JSON.stringify(raw));
-      return raw;
+      const data = JSON.parse(JSON.stringify(raw, (k,v) => v === 0 ? false : v));
+      localStorage.setItem('yoklama_'+key, JSON.stringify(data));
+      return data;
     }
   }catch(e){}
   try{ const s=localStorage.getItem('yoklama_'+key); return s?JSON.parse(s):{}; }catch(e){ return {}; }
@@ -3158,9 +3148,9 @@ async function _buildPDF(weekStart) {
             const vx = X_DAYS + (di * 6 + vi) * VW;
             let txt = '', r=0, g=0, b=0, fs=5.5;
 
-            // O vakitte yoklama alınmış mı? Kilit varsa kesin alınmış, yoksa true/string var mı bak
-            const vakitAlindi = (locksData[dd.key]||[]).includes(vakit) || 
-                                Object.values(vd).some(v => v === true || v === 1);
+            // O vakitte yoklama alınmış mı? true, false veya izin kodu varsa alınmış
+            const vakitAlindi = (locksData[dd.key]||[]).includes(vakit) ||
+                                Object.values(vd).some(v => v === true || v === false || v === 1 || v === 0);
 
             if (st === true || st === 1) {
               txt='+'; r=0; g=130; b=0; fs=6;
