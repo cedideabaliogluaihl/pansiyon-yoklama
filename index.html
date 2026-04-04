@@ -964,11 +964,16 @@ async function getAllDataForFloor(floor, weekDatesParam){
   const weekDates = weekDatesParam || getWeekDates();
   const result={};
   for(const {key} of weekDates){
-    if(floor===currentFloor && key===(window._activeKey||todayKey)){
+    // Her zaman Firebase'den çek — bellekteki veri güncel olmayabilir
+    const cloudData = await loadFromCloud(floor, key);
+    if(cloudData && Object.keys(cloudData).length > 0){
+      result[key] = cloudData;
+    } else if(floor===currentFloor && key===(window._activeKey||todayKey)){
+      // Firebase'de yok ama bellekte var — belleği kullan
       attendanceHistory[currentTime]={...attendance};
       result[key]={...attendanceHistory};
     } else {
-      result[key] = await loadFromCloud(floor, key);
+      result[key] = {};
     }
   }
   return result;
