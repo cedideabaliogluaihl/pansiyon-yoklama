@@ -1473,6 +1473,19 @@ async function saveNobetciPin(){
 }
 
 function logout(){
+  // Admin ise direkt çık
+  if(!isAdmin && currentFloor){
+    // Kilitlenmemiş vakit var mı kontrol et
+    const kilitlenmemis = TIMES.filter(t => !_lockedTimes.includes(t));
+    if(kilitlenmemis.length > 0){
+      const devam = confirm(
+        '⚠️ Aşağıdaki vakitler henüz kilitlenmedi:\n\n' +
+        kilitlenmemis.join(', ') +
+        '\n\nÇıkmadan önce kilitlemeyi unutmayın!\n\nYine de çıkmak istiyor musunuz?'
+      );
+      if(!devam) return;
+    }
+  }
   if(currentFloor){
     attendanceHistory[currentTime]={...attendance};
     try{ localStorage.setItem('yoklama_f'+currentFloor+'_'+(window._activeKey||todayKey), JSON.stringify(attendanceHistory)); }catch(e){}
