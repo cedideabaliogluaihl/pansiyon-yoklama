@@ -921,7 +921,6 @@ async function loadFromStorage(floor){
   _lockedTimes = [];
   await loadLockedTimes();
   await loadIzinler();
-  await loadFloorsFromCloud();
   // Öğrenci listesini güncelle
   students = FLOORS[floor].students;
   const defaultAttendance = Object.fromEntries(FLOORS[floor].students.map(s=>[String(s.id),false]));
