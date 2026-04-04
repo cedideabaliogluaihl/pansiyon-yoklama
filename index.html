@@ -2997,6 +2997,8 @@ async function _buildPDF(weekStart) {
 
   // İzinleri taze yükle
   await loadIzinler();
+  // Kat verilerini taze yükle
+  await loadFloorsFromCloud();
 
   const { jsPDF } = window.jspdf;
   // Seçilen haftanın günlerini üret
