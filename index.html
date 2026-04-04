@@ -627,7 +627,11 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
 <div class="modal-overlay hidden" id="pdfDateModal">
   <div class="modal-sheet" style="max-width:340px;margin:auto;padding:24px 20px;">
     <div style="font-size:22px;text-align:center;margin-bottom:8px;">📄 Haftalık PDF</div>
-    <div style="font-size:13px;color:var(--muted);text-align:center;margin-bottom:16px;">Hangi haftanın çıktısını almak istiyorsunuz?</div>
+    <div style="font-size:13px;color:var(--muted);text-align:center;margin-bottom:12px;">Kat ve haftayı seçin</div>
+    <div style="display:flex;gap:8px;margin-bottom:14px;">
+      <button id="pdfKat2Btn" onclick="setPdfKat(2)" style="flex:1;padding:9px;border-radius:8px;border:2px solid var(--accent);background:var(--accent);color:#000;font-weight:700;font-size:13px;cursor:pointer;">2. Kat</button>
+      <button id="pdfKat3Btn" onclick="setPdfKat(3)" style="flex:1;padding:9px;border-radius:8px;border:2px solid var(--border);background:var(--surface2);color:var(--text);font-weight:700;font-size:13px;cursor:pointer;">3. Kat</button>
+    </div>
     <div style="display:flex;flex-direction:column;gap:8px;" id="pdfWeekList"></div>
     <button onclick="document.getElementById('pdfDateModal').classList.add('hidden')" style="width:100%;margin-top:12px;padding:10px;border-radius:10px;border:none;background:transparent;color:var(--muted);font-size:13px;cursor:pointer;">İptal</button>
   </div>
@@ -2964,8 +2968,20 @@ function toASCII(str) {
 // ══════════════════════════════════════
 // PDF EXPORT — Dikey A4, tek sayfa
 // ══════════════════════════════════════
+let _pdfKat = 2;
+
+function setPdfKat(kat){
+  _pdfKat = kat;
+  [2,3].forEach(k => {
+    const btn = document.getElementById('pdfKat'+k+'Btn');
+    if(k===kat){ btn.style.background='var(--accent)'; btn.style.color='#000'; btn.style.borderColor='var(--accent)'; }
+    else { btn.style.background='var(--surface2)'; btn.style.color='var(--text)'; btn.style.borderColor='var(--border)'; }
+  });
+}
+
 function exportPDF() {
-  // Son 4 haftayı listele
+  _pdfKat = currentFloor || 2;
+  setPdfKat(_pdfKat);
   const modal = document.getElementById('pdfDateModal');
   const list = document.getElementById('pdfWeekList');
   list.innerHTML = '';
@@ -2980,14 +2996,15 @@ function exportPDF() {
     btn.textContent = (w===0?'📅 Bu hafta: ':'📅 ') + label;
     btn.onclick = ()=>{
       modal.classList.add('hidden');
-      _buildPDF(mon);
+      _buildPDF(mon, _pdfKat);
     };
     list.appendChild(btn);
   }
   modal.classList.remove('hidden');
 }
 
-async function _buildPDF(weekStart) {
+async function _buildPDF(weekStart, pdfFloor) {
+  const targetFloor = pdfFloor || currentFloor || 2;
   attendanceHistory[currentTime] = {...attendance};
   saveToStorage();
   showSync('⏬ Veriler alınıyor...','#0099ff');
@@ -3036,7 +3053,7 @@ async function _buildPDF(weekStart) {
   const H_USED     = MT + H_HDR_PAGE + H_HDR_TBL + H_SIGN + 1;
   const H_AVAIL    = PH - H_USED;
 
-  for(const [floorIdx, floor] of [[0,2],[1,3]]) {
+  for(const [floorIdx, floor] of [[0, targetFloor]]) {
     if (floorIdx > 0) doc.addPage();
 
     const floorData    = await getAllDataForFloor(floor, weekDates);
