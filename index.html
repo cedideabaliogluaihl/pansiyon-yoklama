@@ -2540,10 +2540,22 @@ function renderAll(){
       // Nöbetçide izin badge'i tik butonunun yanında göster
       const nobetciIzin = !isAdmin && activeIzin ? izinBadge : '';
 
+      // Günlük vakit durumu — tüm vakitlerin o günkü durumu
+      const vakitPills = !isAdmin ? TIMES.map(t => {
+        const tData = attendanceHistory[t] || {};
+        const val = t === currentTime ? attendance[String(s.id)] : tData[String(s.id)];
+        const isActive = t === currentTime;
+        if(val === true)  return `<span style="font-size:9px;padding:1px 4px;border-radius:4px;background:rgba(0,212,170,0.2);color:var(--present);font-weight:700;${isActive?'border:1px solid var(--present)':''}">${t.substring(0,3)}+</span>`;
+        if(val === false) return `<span style="font-size:9px;padding:1px 4px;border-radius:4px;background:rgba(255,74,77,0.2);color:var(--absent);font-weight:700;${isActive?'border:1px solid var(--absent)':''}">${t.substring(0,3)}-</span>`;
+        if(typeof val === 'string') return `<span style="font-size:9px;padding:1px 4px;border-radius:4px;background:rgba(167,139,250,0.2);color:var(--izin);font-weight:700;">${t.substring(0,3)}${val}</span>`;
+        return `<span style="font-size:9px;padding:1px 4px;border-radius:4px;background:var(--surface2);color:var(--muted);">${t.substring(0,3)}</span>`;
+      }).join('') : '';
+
       html+=`<div class="${rowCls}" id="row-${s.id}" onclick="${isAdmin?'':('toggle('+s.id+')')}">
         <div class="student-info">
           <div class="student-name">${s.name}</div>
           <div class="student-meta">${s.cls} • Oda ${s.room} • Etüt ${s.etut||'-'}${!isAdmin && activeIzin ? ` <span style="color:var(--accent);font-size:10px;">${activeIzin.baslangic===activeIzin.bitis ? activeIzin.baslangic : activeIzin.baslangic+' → '+activeIzin.bitis}${activeIzin.saatBitis ? ' • ⏰ '+activeIzin.saatBitis+'\'e kadar' : ''} izinli</span>` : ''}</div>
+          ${vakitPills ? `<div style="display:flex;flex-wrap:wrap;gap:2px;margin-top:3px;">${vakitPills}</div>` : ''}
         </div>
         <div class="status-area" style="display:flex;align-items:center;gap:6px;">${adminHtml}${nobetciIzin}${tickHtml}</div>
       </div>`;
