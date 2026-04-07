@@ -1186,6 +1186,8 @@ function cancelPinPopup(){
 
 async function continueStartApp(floor, selectedKey){
   currentFloor = floor; // Her ihtimale karşı burada da set et
+  // Güncel öğrenci listesini Firebase'den çek
+  await loadFloorsFromCloud();
   students = FLOORS[floor].students;
   attendance=Object.fromEntries(students.map(s=>[String(s.id),false]));
   attendanceHistory={}; currentTime='Akşam';
@@ -3299,7 +3301,7 @@ async function _buildPDF(weekStart, pdfFloor) {
     doc.text('Mudur Yardimcisi', ML + W_LEFT/2, y + H_SIGN - 7.5, {align:'center'});
 
     doc.setFontSize(3.8); doc.setFont('helvetica','normal'); doc.setTextColor(100);
-    doc.text('Ad Soyad / Imza', ML + W_LEFT/2, y + H_SIGN - 5.5, {align:'center'});
+    
 
     // Her gün için imza kutusu — gün sütunuyla tam hizalı
     for(let di=0; di<weekDates.length; di++){
@@ -3333,7 +3335,7 @@ async function _buildPDF(weekStart, pdfFloor) {
 
       // "Ad Soyad / Imza"
       doc.setFontSize(3.8); doc.setFont('helvetica','normal'); doc.setTextColor(100);
-      doc.text('Ad Soyad / Imza', gx + gw/2, y + H_SIGN - 5.5, {align:'center'});
+      
     }
 
     // Devam sütunu altı boş kutu
