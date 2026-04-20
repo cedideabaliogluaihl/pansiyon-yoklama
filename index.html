@@ -444,6 +444,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
   <div class="bottom-bar">
     <button class="btn btn-save" id="saveBtn" onclick="lockCurrentTime()">💾 Kaydet</button>
     <button class="btn btn-blue" onclick="openReport()">📊 Günlük Rapor</button>
+    <button class="btn" onclick="openIzinRaporu()" style="background:rgba(167,139,250,0.2);color:var(--izin);border:1px solid var(--izin);">📋 İzin Raporu</button>
     <button class="btn btn-purple" id="pdfBtn" onclick="exportPDF()" style="display:none;">🖨️ PDF Yazdır</button>
   </div>
 </div>
@@ -669,6 +670,16 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
 
 <!-- RAPOR MODAL -->
 <div class="modal-overlay hidden" id="reportModal" onclick="closeReportBg(event)">
+
+<!-- İZİN RAPORU MODAL -->
+<div class="modal-overlay hidden" id="izinRaporModal" onclick="if(event.target.id==='izinRaporModal')closeIzinRaporu()">
+  <div class="modal-sheet">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📋 İzin Raporu <button class="modal-close" onclick="closeIzinRaporu()">✕</button></div>
+    <div id="izinRaporContent" style="overflow-y:auto;max-height:60vh;"></div>
+    <button class="copy-btn" onclick="copyIzinRaporu()">📋 Kopyala / Paylaş</button>
+  </div>
+</div>
   <div class="modal-sheet">
     <div class="modal-handle"></div>
     <div class="modal-title">📊 Günlük Rapor <button class="modal-close" onclick="closeReport()">✕</button></div>
@@ -765,10 +776,8 @@ const FLOORS = {
       {id:122,name:"SÜLEYMAN ENES UYAMIK",      room:"306",cls:"10A",etut:"107"},
       {id:123,name:"HASAN BASRİ OLGUN",         room:"306",cls:"9A", etut:"107"},
       {id:124,name:"İSMAİL YİĞİT ÇAL",          room:"307",cls:"10A",etut:"107"},
-      {id:125,name:"FIRAT GÜL",                 room:"307",cls:"10A",etut:"107"},
       {id:126,name:"OĞUZHAN TAŞBAŞ",            room:"307",cls:"10A",etut:"107"},
       {id:127,name:"AHMET KAYRA DEMİR",         room:"308",cls:"9A", etut:"107"},
-      {id:128,name:"ENİS DEMİRBİLEK",           room:"308",cls:"9A", etut:"107"},
       {id:129,name:"HALİL EFE PEHLİVAN",        room:"308",cls:"9A", etut:"107"},
       {id:130,name:"SELİM ERDEM ULU",           room:"308",cls:"9A", etut:"107"},
       {id:131,name:"ÇAĞRI ÖZEL",                room:"309",cls:"9B", etut:"107"},
@@ -2618,6 +2627,65 @@ function openReport(){
   renderVakitTabs();renderReport();
 }
 function closeReport(){document.getElementById('reportModal').classList.add('hidden');}
+
+function openIzinRaporu(){
+  document.getElementById('izinRaporModal').classList.remove('hidden');
+  renderIzinRaporu();
+}
+function closeIzinRaporu(){document.getElementById('izinRaporModal').classList.add('hidden');}
+
+function renderIzinRaporu(){
+  const today2 = today.toISOString().split('T')[0];
+  let html = '';
+  let count = 0;
+
+  // Her iki kattan izinli öğrencileri topla
+  [2,3].forEach(f => {
+    const izinlilar = FLOORS[f].students.filter(s => {
+      const iz = getActiveIzin(s.id);
+      return iz !== null;
+    });
+    if(!izinlilar.length) return;
+    html += `<div style="font-size:11px;color:var(--accent);font-weight:700;padding:6px 0 4px;">${FLOORS[f].label}</div>`;
+    izinlilar.forEach(s => {
+      const iz = getActiveIzin(s.id);
+      const icon = iz.kod==='I'?'🏠':iz.kod==='R'?'🏥':'🌙';
+      const ad = iz.kod==='I'?'İzin':iz.kod==='R'?'Rapor':'Evci';
+      const renk = iz.kod==='I'?'var(--izin)':iz.kod==='R'?'var(--rapor)':'var(--evci)';
+      html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:8px;background:var(--surface2);border:1px solid var(--border);margin-bottom:4px;">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--text);">${s.name}</div>
+          <div style="font-size:10px;color:var(--muted);">${s.cls} • Oda ${s.room}</div>
+        </div>
+        <div style="text-align:right;">
+          <span style="font-size:12px;font-weight:700;color:${renk};">${icon} ${ad}</span>
+          <div style="font-size:10px;color:var(--muted);">${iz.baslangic===iz.bitis?iz.bitis:iz.baslangic+' → '+iz.bitis}${iz.saatBitis?' ⏰ '+iz.saatBitis:''}</div>
+        </div>
+      </div>`;
+      count++;
+    });
+  });
+
+  if(!count) html = `<div style="color:var(--muted);font-size:13px;text-align:center;padding:30px 0;">Aktif izinli öğrenci yok</div>`;
+  document.getElementById('izinRaporContent').innerHTML = html;
+}
+
+function copyIzinRaporu(){
+  let text = `📋 İzin Raporu — ${today.toLocaleDateString('tr-TR')}\n\n`;
+  [2,3].forEach(f => {
+    const izinlilar = FLOORS[f].students.filter(s => getActiveIzin(s.id));
+    if(!izinlilar.length) return;
+    text += `${FLOORS[f].label}:\n`;
+    izinlilar.forEach(s => {
+      const iz = getActiveIzin(s.id);
+      const ad = iz.kod==='I'?'İzin':iz.kod==='R'?'Rapor':'Evci';
+      text += `  • ${s.name} (${s.room}) — ${ad} ${iz.baslangic===iz.bitis?iz.bitis:iz.baslangic+' → '+iz.bitis}${iz.saatBitis?' ⏰ '+iz.saatBitis:''}\n`;
+    });
+    text += '\n';
+  });
+  if(navigator.share) navigator.share({title:'İzin Raporu', text}).catch(()=>{});
+  else navigator.clipboard.writeText(text).then(()=>showToast('📋 Kopyalandı!'));
+}
 function closeReportBg(e){if(e.target.id==='reportModal')closeReport();}
 function renderVakitTabs(){
   document.getElementById('vakitTabs').innerHTML=TIMES.map(t=>{
