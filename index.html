@@ -552,15 +552,20 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
         <span style="font-size:12px;color:var(--muted);width:60px;">Bitiş</span>
         <input type="date" id="izinEkleBitis" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;">
       </div>
-      <!-- Saat (opsiyonel) -->
-      <div style="display:flex;align-items:center;gap:8px;">
-        <span style="font-size:12px;color:var(--muted);width:60px;">⏰ Dönüş</span>
-        <div style="flex:1;display:flex;align-items:center;gap:6px;">
-          <input type="time" id="izinEkleSaat" style="flex:1;padding:8px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px;">
-          <button onclick="document.getElementById('izinEkleSaat').value=''" style="padding:6px 10px;border-radius:7px;border:1px solid var(--border);background:var(--surface);color:var(--muted);font-size:11px;cursor:pointer;">Sil</button>
+      <!-- Bitiş vakti seçimi -->
+      <div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:6px;">⏰ Hangi vakitten itibaren izin biter? (Son izinli vakit)</div>
+        <div style="display:flex;flex-wrap:wrap;gap:5px;" id="izinVakitSecim">
+          <button onclick="setIzinVakit('Akşam')"    class="izin-vakit-btn" data-vakit="Akşam"  style="padding:5px 8px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;cursor:pointer;">🌆 Akşam</button>
+          <button onclick="setIzinVakit('Telefon')"  class="izin-vakit-btn" data-vakit="Telefon" style="padding:5px 8px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;cursor:pointer;">📞 Telefon</button>
+          <button onclick="setIzinVakit('Etüt')"     class="izin-vakit-btn" data-vakit="Etüt"   style="padding:5px 8px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;cursor:pointer;">📚 Etüt</button>
+          <button onclick="setIzinVakit('Yatsı')"    class="izin-vakit-btn" data-vakit="Yatsı"  style="padding:5px 8px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;cursor:pointer;">🕌 Yatsı</button>
+          <button onclick="setIzinVakit('Uyku')"     class="izin-vakit-btn" data-vakit="Uyku"   style="padding:5px 8px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;cursor:pointer;">🛏 Yat</button>
+          <button onclick="setIzinVakit('Sabah')"    class="izin-vakit-btn" data-vakit="Sabah"  style="padding:5px 8px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--muted);font-size:11px;cursor:pointer;">🌅 Sabah</button>
+          <button onclick="setIzinVakit('')"         class="izin-vakit-btn" data-vakit=""       style="padding:5px 8px;border-radius:7px;border:1px solid var(--border);background:var(--accent);color:#000;font-size:11px;cursor:pointer;font-weight:700;">Tüm Gün</button>
         </div>
+        <div style="font-size:10px;color:var(--muted);margin-top:4px;">Seçilen vakitten sonraki yoklamalarda izin görünmez</div>
       </div>
-      <div style="font-size:10px;color:var(--muted);padding-left:68px;">Dönüş saati: bitiş günü bu saatten sonra otomatik kalkar</div>
     </div>
     <div style="display:flex;gap:8px;">
       <button onclick="saveIzinPanel()" style="flex:1;padding:11px;border-radius:8px;border:none;background:var(--accent);color:#000;font-weight:700;font-size:13px;cursor:pointer;">✅ Kaydet</button>
@@ -1827,13 +1832,13 @@ function selectIzinKodPanel(kod){
 async function saveIzinPanel(){
   const bas = document.getElementById('izinEkleBaslangic').value;
   const bit = document.getElementById('izinEkleBitis').value;
-  const saat = document.getElementById('izinEkleSaat').value; // "HH:MM" veya ""
+  const bitisVakit = window._selectedIzinVakit || ''; // Seçilen bitiş vakti
   if(!bas||!bit){ showToast('⚠️ Tarih seçin'); return; }
   if(bas>bit){ showToast('⚠️ Başlangıç bitişten büyük olamaz'); return; }
   const id = _izinPanelId;
   if(!_izinler[id]) _izinler[id] = [];
   const entry = {kod:_izinPanelKod, baslangic:bas, bitis:bit};
-  if(saat) entry.saatBitis = saat; // opsiyonel bitiş saati
+  if(bitisVakit) entry.bitisVakit = bitisVakit; // Bitiş vakti
   _izinler[id].push(entry);
   await saveIzinlerToCloud();
   document.getElementById('izinEkleModal').classList.add('hidden');
@@ -2248,61 +2253,55 @@ async function saveIzinlerToCloud(){
   }catch(e){}
 }
 
-function getActiveIzin(studentId){
+function getActiveIzin(studentId, vakit){
   const list = _izinler[String(studentId)] || [];
   const now = new Date();
   const activeDate = (window._activeKey||todayKey).replace(/_/g,'-');
   const todayStr = now.toISOString().split('T')[0];
-  const nowTime = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
 
   return list.find(iz => {
     if(iz.baslangic > activeDate || iz.bitis < activeDate) return false;
-    // Bitiş saati varsa ve bugün bitiş günüyse saate bak
+    // Bitiş vakti varsa — bitiş günündeki sonraki vakitlerde izin görünmez
+    if(iz.bitisVakit && activeDate === iz.bitis && vakit){
+      const vakitSirasi = ['Akşam','Telefon','Etüt','Yatsı','Uyku','Sabah'];
+      const bitisIdx = vakitSirasi.indexOf(iz.bitisVakit);
+      const suAnkiIdx = vakitSirasi.indexOf(vakit);
+      if(bitisIdx !== -1 && suAnkiIdx !== -1 && suAnkiIdx > bitisIdx) return false;
+    }
+    // Eski saatBitis desteği (geriye dönük uyumluluk)
     if(iz.saatBitis && activeDate === iz.bitis && activeDate === todayStr){
+      const nowTime = now.getHours().toString().padStart(2,'0')+':'+now.getMinutes().toString().padStart(2,'0');
       return nowTime <= iz.saatBitis;
     }
-    // Bitiş saati var ama bitiş günü geçmişse izin bitti
-    if(iz.saatBitis && iz.bitis < todayStr){
-      return false;
-    }
+    if(iz.saatBitis && iz.bitis < todayStr) return false;
     return true;
   }) || null;
 }
 
-// PDF için izin kontrolü — belirli bir tarih ve vakit için
 function getIzinForPDF(studentId, dateStr, vakit){
   const list = _izinler[String(studentId)] || [];
-  const vakitSaatleri = {'Akşam':'19:00','Telefon':'20:00','Etüt':'20:30','Yatsı':'21:30','Uyku':'23:00','Sabah':'07:00'};
-  
-  // Zaman çizelgesinden vakit saatini al
-  let vakitSaat = vakitSaatleri[vakit] || '00:00';
-  const cizelgeRows = (_cizelge.rows||[]);
-  cizelgeRows.forEach((row,ri) => {
-    if(row.label && row.label.toLowerCase().includes(vakit.toLowerCase())){
-      const m = row.label.match(/\d{1,2}[:.]\d{2}/);
-      if(m) vakitSaat = m[0].replace('.',':');
-      else {
-        (_cizelge.cols||[]).forEach((_,ci) => {
-          const cv = (_cizelge.cells||{})[ri+'_'+ci]||'';
-          const cm = cv.match(/\d{1,2}[:.]\d{2}/);
-          if(cm) vakitSaat = cm[0].replace('.',':');
-        });
-      }
-    }
-  });
+  const vakitSirasi = ['Akşam','Telefon','Etüt','Yatsı','Uyku','Sabah'];
 
   return list.find(iz => {
     if(iz.baslangic > dateStr || iz.bitis < dateStr) return false;
-    // Bitiş saati varsa ve bitiş günündeyse vakit saatiyle karşılaştır
+    // Yeni sistem: bitisVakit
+    if(iz.bitisVakit && dateStr === iz.bitis){
+      const bitisIdx = vakitSirasi.indexOf(iz.bitisVakit);
+      const suAnkiIdx = vakitSirasi.indexOf(vakit);
+      if(bitisIdx !== -1 && suAnkiIdx !== -1 && suAnkiIdx > bitisIdx) return false;
+    }
+    // Eski sistem: saatBitis (geriye dönük uyumluluk)
     if(iz.saatBitis && dateStr === iz.bitis){
-      return vakitSaat <= iz.saatBitis;
+      const varsayilanSaatler = {'Akşam':'19:00','Telefon':'20:00','Etüt':'20:30','Yatsı':'21:30','Uyku':'23:00','Sabah':'07:00'};
+      let vakitSaat = varsayilanSaatler[vakit] || '00:00';
+      if(vakitSaat > iz.saatBitis) return false;
     }
     return true;
   }) || null;
 }
 
 function openIzinModal(studentId){
-  _izinModalId = String(studentId);  // her zaman string
+  _izinModalId = String(studentId);
   const s = FLOORS[currentFloor].students.find(s=>String(s.id)===_izinModalId);
   document.getElementById('izinModalTitle').textContent = s ? s.name : 'İzin Ekle';
   document.getElementById('izinModalSub').textContent = 'İzin türünü ve tarih aralığını seçin';
@@ -2310,6 +2309,9 @@ function openIzinModal(studentId){
   document.getElementById('izinBaslangic').value = fmt(today);
   document.getElementById('izinBitis').value = fmt(today);
   selectIzinKod('I');
+  // Vakit seçimini sıfırla — varsayılan Tüm Gün
+  window._selectedIzinVakit = '';
+  setIzinVakit('');
   renderMevcutIzinler();
   document.getElementById('izinModal').classList.remove('hidden');
 }
@@ -2531,9 +2533,9 @@ function renderAll(){
       else if(st==='E')rowCls+=' st-evci';
 
       // Aktif izin varsa badge göster
-      const activeIzin = getActiveIzin(s.id);
+      const activeIzin = getActiveIzin(s.id, currentTime);
       const izinBadge = activeIzin
-        ? `<span style="font-size:10px;padding:2px 6px;border-radius:5px;background:${activeIzin.kod==='I'?'rgba(167,139,250,0.2)':activeIzin.kod==='R'?'rgba(251,146,60,0.2)':'rgba(96,165,250,0.2)'};color:${activeIzin.kod==='I'?'var(--izin)':activeIzin.kod==='R'?'var(--rapor)':'var(--evci)'};font-weight:700;">${activeIzin.kod==='I'?'🏠 İzin':activeIzin.kod==='R'?'🏥 Rapor':'🌙 Evci'}${activeIzin.saatBitis ? ' ⏰ '+activeIzin.saatBitis : ' • '+activeIzin.bitis}</span>`
+        ? `<span style="font-size:10px;padding:2px 6px;border-radius:5px;background:${activeIzin.kod==='I'?'rgba(167,139,250,0.2)':activeIzin.kod==='R'?'rgba(251,146,60,0.2)':'rgba(96,165,250,0.2)'};color:${activeIzin.kod==='I'?'var(--izin)':activeIzin.kod==='R'?'var(--rapor)':'var(--evci)'};font-weight:700;">${activeIzin.kod==='I'?'🏠 İzin':activeIzin.kod==='R'?'🏥 Rapor':'🌙 Evci'}${activeIzin.bitisVakit ? ' → '+activeIzin.bitisVakit : activeIzin.saatBitis ? ' ⏰ '+activeIzin.saatBitis : ' • '+activeIzin.bitis}</span>`
         : '';
 
       // Admin: sadece badge (+ butonu kaldırıldı — panel üzerinden yönetilir)
@@ -2627,6 +2629,24 @@ function openReport(){
   renderVakitTabs();renderReport();
 }
 function closeReport(){document.getElementById('reportModal').classList.add('hidden');}
+
+function setIzinVakit(vakit){
+  document.querySelectorAll('.izin-vakit-btn').forEach(btn => {
+    const v = btn.getAttribute('data-vakit');
+    if(v === vakit){
+      btn.style.background = 'var(--accent)';
+      btn.style.color = '#000';
+      btn.style.fontWeight = '700';
+      btn.style.borderColor = 'var(--accent)';
+    } else {
+      btn.style.background = 'var(--surface2)';
+      btn.style.color = 'var(--muted)';
+      btn.style.fontWeight = 'normal';
+      btn.style.borderColor = 'var(--border)';
+    }
+  });
+  window._selectedIzinVakit = vakit;
+}
 
 function openIzinRaporu(){
   document.getElementById('izinRaporModal').classList.remove('hidden');
