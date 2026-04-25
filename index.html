@@ -1764,19 +1764,24 @@ function renderIzinPanel(){
     return;
   }
 
-  // Odaya göre grupla
-  const rooms = [...new Set(filtered.map(s=>s.room))].sort((a,b)=>parseInt(a)-parseInt(b));
+  // Önce izinli öğrencileri göster
+  const izinliler = filtered.filter(s => (_izinler[String(s.id)]||[]).length > 0);
+  const digerler = filtered.filter(s => !(_izinler[String(s.id)]||[]).length);
+  const siralanmis = [...izinliler, ...digerler];
+
+  const rooms = [...new Set(siralanmis.map(s=>s.room))].sort((a,b)=>parseInt(a)-parseInt(b));
   let html = '';
   rooms.forEach(room=>{
     html += `<div style="font-size:11px;font-weight:700;color:var(--accent);padding:4px 2px 2px;">ODA ${room}</div>`;
-    filtered.filter(s=>s.room===room).forEach(s=>{
+    siralanmis.filter(s=>s.room===room).forEach(s=>{
       const izinList = _izinler[String(s.id)] || [];
       const activeIzin = getActiveIzin(s.id);
       const badge = activeIzin
-        ? `<span style="font-size:11px;padding:2px 8px;border-radius:12px;background:${activeIzin.kod==='I'?'rgba(14,165,233,0.2)':activeIzin.kod==='R'?'rgba(239,68,68,0.2)':'rgba(139,92,246,0.2)'};color:${activeIzin.kod==='I'?'#0ea5e9':activeIzin.kod==='R'?'#ef4444':'#8b5cf6'};">${activeIzin.kod==='I'?'🏠 İzin':activeIzin.kod==='R'?'🏥 Rapor':'🌙 Evci'}${activeIzin.saatBitis ? ' ⏰ '+activeIzin.saatBitis : ' • '+activeIzin.bitis}</span>`
+        ? `<span style="font-size:11px;padding:2px 8px;border-radius:12px;background:${activeIzin.kod==='I'?'rgba(14,165,233,0.2)':activeIzin.kod==='R'?'rgba(239,68,68,0.2)':'rgba(139,92,246,0.2)'};color:${activeIzin.kod==='I'?'#0ea5e9':activeIzin.kod==='R'?'#ef4444':'#8b5cf6'};">${activeIzin.kod==='I'?'🏠 İzin':activeIzin.kod==='R'?'🏥 Rapor':'🌙 Evci'}${activeIzin.bitisVakit ? ' → '+activeIzin.bitisVakit : activeIzin.saatBitis ? ' ⏰ '+activeIzin.saatBitis : ' • '+activeIzin.bitis}</span>`
         : '';
+      const borderColor = activeIzin ? 'var(--accent)' : 'var(--border)';
       html += `
-        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:4px;">
+        <div style="background:var(--surface2);border:1px solid ${borderColor};border-radius:10px;padding:10px 12px;margin-bottom:4px;">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;">
             <div style="flex:1;">
               <div style="font-size:13px;font-weight:700;color:var(--text);">${s.name}</div>
@@ -1791,8 +1796,8 @@ function renderIzinPanel(){
           <div style="margin-top:8px;display:flex;flex-direction:column;gap:4px;">
             ${izinList.map((iz,i)=>`
               <div style="display:flex;align-items:center;justify-content:space-between;padding:5px 8px;border-radius:7px;background:var(--surface);font-size:11px;">
-                <span>${iz.kod==='I'?'🏠':iz.kod==='R'?'🏥':'🌙'} <b>${iz.kod==='I'?'İzin':iz.kod==='R'?'Rapor':'Evci'}</b> — ${iz.baslangic} → ${iz.bitis}${iz.saatBitis ? ' <span style="color:var(--accent);">⏰ '+iz.saatBitis+'\'e kadar</span>' : ''}</span>
-                <button onclick="deleteIzinPanel('${s.id}',${i})" style="padding:2px 7px;border-radius:5px;border:none;background:#dc2626;color:#fff;font-size:10px;cursor:pointer;">🗑</button>
+                <span>${iz.kod==='I'?'🏠':iz.kod==='R'?'🏥':'🌙'} <b>${iz.kod==='I'?'İzin':iz.kod==='R'?'Rapor':'Evci'}</b> — ${iz.baslangic} → ${iz.bitis}${iz.bitisVakit ? ' <span style="color:var(--accent);">→ '+iz.bitisVakit+' kadar</span>' : iz.saatBitis ? ' <span style="color:var(--accent);">⏰ '+iz.saatBitis+'\'e kadar</span>' : ''}</span>
+                <button onclick="deleteIzinPanel('${s.id}',${i})" style="padding:4px 10px;border-radius:5px;border:none;background:#dc2626;color:#fff;font-size:11px;font-weight:700;cursor:pointer;">🗑 Sil</button>
               </div>`).join('')}
           </div>` : ''}
         </div>`;
