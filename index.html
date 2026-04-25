@@ -1561,7 +1561,7 @@ function switchAdminTab(tab){
   if(tab==='liste') renderTeacherList();
   if(tab==='atama') renderAtama();
   if(tab==='ogrenci'){ _ogrKatSec=2; switchOgrKat(2); }
-  if(tab==='izin'){ _izinKatSec=2; switchIzinKat(2); }
+  if(tab==='izin'){ _izinKatSec=2; loadIzinler().then(()=>switchIzinKat(2)); }
   if(tab==='cizelge') renderCizelge();
 }
 
