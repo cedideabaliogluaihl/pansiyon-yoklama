@@ -277,6 +277,17 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
 <!-- GİRİŞ -->
 <div class="screen active" id="screenLogin">
   <div class="login-wrap">
+    <!-- Namaz Vakitleri -->
+    <div id="namazWidget" style="width:100%;max-width:320px;background:var(--surface2);border-radius:14px;border:1px solid var(--border);padding:10px 14px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+        <div style="font-size:11px;font-weight:700;color:var(--accent);">🕌 DENİZLİ - MERKEZEFENDİ</div>
+        <div id="namazCountdown" style="font-size:11px;color:var(--muted);"></div>
+      </div>
+      <div id="namazVakitler" style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;">
+        <div style="text-align:center;color:var(--muted);font-size:10px;padding:8px 2px;">Yükleniyor...</div>
+      </div>
+      <div id="namazSonraki" style="margin-top:8px;font-size:11px;text-align:center;color:var(--accent);font-weight:600;"></div>
+    </div>
     <div class="login-logo">📋</div>
     <div style="text-align:center;">
       <div class="login-title">YOKLAMA SİSTEMİ</div>
@@ -1013,6 +1024,8 @@ function goScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classLis
 window.addEventListener('load',()=>{
   // Admin şifresini Firebase'den yükle
   loadAdminPin().catch(()=>{});
+  // Namaz vakitleri
+  startNamazTimer();
   // Çizelgeyi yükle ve vakit butonlarını güncelle
   loadCizelge().then(()=>updateVakitSaatleri()).catch(()=>{});
   // PDF butonu sadece PC'de görünsün
@@ -1486,6 +1499,118 @@ async function saveNobetciPin(){
     document.getElementById('nobetciSifreModal').classList.add('hidden');
     showToast('✅ PIN güncellendi!');
   }catch(e){ showToast('⚠️ Kayıt başarısız'); }
+}
+
+// ══════════════════════════════════════
+// NAMAZ VAKİTLERİ — Denizli Merkezefendi
+// ══════════════════════════════════════
+let _namazVakitler = null;
+const NAMAZ_ILCE = 9221; // Denizli Merkezefendi Diyanet kodu
+
+async function loadNamazVakitleri(){
+  try{
+    const r = await fetch(`https://ezanvakti.emushaf.net/vakitler/${NAMAZ_ILCE}`, {cache:'no-store'});
+    const j = await r.json();
+    if(j && j.length){
+      // Bugünün verisini bul
+      const todayStr = new Date().toLocaleDateString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric'}).replace(/\./g,'.');
+      const bugun = j.find(v => v.MiladiTarihKisaIso8601 === new Date().toISOString().split('T')[0]) || j[0];
+      _namazVakitler = {
+        imsak: bugun.Imsak,
+        sabah: bugun.Sabah,
+        ogle:  bugun.Ogle,
+        ikindi:bugun.Ikindi,
+        aksam: bugun.Aksam,
+        yatsi: bugun.Yatsi
+      };
+      renderNamazWidget();
+    }
+  }catch(e){
+    // API hata verirse sessizce geç
+    document.getElementById('namazVakitler').innerHTML = '<div style="color:var(--muted);font-size:10px;text-align:center;grid-column:span 5;">Vakitler yüklenemedi</div>';
+  }
+}
+
+function renderNamazWidget(){
+  if(!_namazVakitler) return;
+  const v = _namazVakitler;
+  const vakitler = [
+    {ad:'Sabah', saat:v.sabah, ikon:'🌄'},
+    {ad:'Öğle',  saat:v.ogle,  ikon:'☀️'},
+    {ad:'İkindi',saat:v.ikindi,ikon:'🌤'},
+    {ad:'Akşam', saat:v.aksam, ikon:'🌆'},
+    {ad:'Yatsı', saat:v.yatsi, ikon:'🌙'}
+  ];
+
+  const now = new Date();
+  const nowMin = now.getHours()*60 + now.getMinutes();
+
+  const toMin = s => {
+    const [h,m] = s.split(':').map(Number);
+    return h*60+m;
+  };
+
+  // Aktif ve sonraki vakti bul
+  let aktifIdx = -1;
+  let sonrakiIdx = -1;
+  for(let i=0; i<vakitler.length; i++){
+    const vm = toMin(vakitler[i].saat);
+    if(nowMin >= vm) aktifIdx = i;
+  }
+  sonrakiIdx = aktifIdx + 1 < vakitler.length ? aktifIdx + 1 : -1;
+
+  const container = document.getElementById('namazVakitler');
+  container.innerHTML = vakitler.map((v,i) => {
+    const isAktif = i === aktifIdx;
+    const isSonraki = i === sonrakiIdx;
+    return `<div style="text-align:center;padding:6px 2px;border-radius:8px;background:${isAktif?'var(--accent)':isSonraki?'rgba(0,212,170,0.1)':'transparent'};border:${isSonraki?'1px solid var(--accent)':'1px solid transparent'};">
+      <div style="font-size:14px;">${v.ikon}</div>
+      <div style="font-size:9px;color:${isAktif?'#000':isSonraki?'var(--accent)':'var(--muted)'};font-weight:700;margin-top:1px;">${v.ad}</div>
+      <div style="font-size:11px;color:${isAktif?'#000':isSonraki?'var(--accent)':'var(--text)'};font-weight:700;">${v.saat}</div>
+    </div>`;
+  }).join('');
+
+  // Geri sayım
+  updateNamazCountdown(vakitler, sonrakiIdx, toMin);
+}
+
+function updateNamazCountdown(vakitler, sonrakiIdx, toMin){
+  const countdownEl = document.getElementById('namazCountdown');
+  const sonrakiEl = document.getElementById('namazSonraki');
+  if(!countdownEl || !sonrakiEl) return;
+
+  const now = new Date();
+  const nowMin = now.getHours()*60 + now.getMinutes();
+  const nowSec = now.getSeconds();
+
+  if(sonrakiIdx === -1){
+    countdownEl.textContent = '';
+    sonrakiEl.textContent = '✅ Tüm vakitler tamamlandı';
+    return;
+  }
+
+  const sonraki = vakitler[sonrakiIdx];
+  const sonrakiMin = toMin(sonraki.saat);
+  let kalanSn = (sonrakiMin - nowMin) * 60 - nowSec;
+  if(kalanSn < 0) kalanSn = 0;
+
+  const s = Math.floor(kalanSn % 60).toString().padStart(2,'0');
+  const m = Math.floor((kalanSn/60) % 60).toString().padStart(2,'0');
+  const h = Math.floor(kalanSn/3600);
+
+  const kalanStr = h > 0 ? `${h}:${m}:${s}` : `${m}:${s}`;
+  sonrakiEl.textContent = `⏰ ${sonraki.ad} namazına ${kalanStr} kaldı`;
+}
+
+function startNamazTimer(){
+  loadNamazVakitleri();
+  setInterval(()=>{
+    if(_namazVakitler) renderNamazWidget();
+  }, 1000);
+  // Her gece yarısı yenile
+  setInterval(()=>{
+    loadNamazVakitleri();
+  }, 60*60*1000);
 }
 
 function logout(){
