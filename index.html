@@ -296,7 +296,6 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
     <div class="login-btns">
       <button class="login-btn btn-nobetci" onclick="goKatSec()">👮 Nöbetçi Girişi</button>
       <button class="login-btn btn-admin" onclick="goAdmin()" style="margin-top:4px;">🔐 Admin Girişi</button>
-      <button class="login-btn" onclick="goVeli()" style="margin-top:4px;background:linear-gradient(135deg,#0f766e,#0d9488);color:#fff;">👨‍👩‍👦 Veli Girişi</button>
     </div>
   </div>
 </div>
@@ -1505,29 +1504,27 @@ async function saveNobetciPin(){
 // NAMAZ VAKİTLERİ — Denizli Merkezefendi
 // ══════════════════════════════════════
 let _namazVakitler = null;
-const NAMAZ_ILCE = 9221; // Denizli Merkezefendi Diyanet kodu
+// Denizli Merkezefendi koordinatları, Diyanet metodu (method=13)
+const NAMAZ_URL = 'https://api.aladhan.com/v1/timingsByCity?city=Denizli&country=Turkey&method=13';
 
 async function loadNamazVakitleri(){
   try{
-    const r = await fetch(`https://ezanvakti.emushaf.net/vakitler/${NAMAZ_ILCE}`, {cache:'no-store'});
+    const r = await fetch(NAMAZ_URL, {cache:'no-store'});
     const j = await r.json();
-    if(j && j.length){
-      // Bugünün verisini bul
-      const todayStr = new Date().toLocaleDateString('tr-TR',{day:'2-digit',month:'2-digit',year:'numeric'}).replace(/\./g,'.');
-      const bugun = j.find(v => v.MiladiTarihKisaIso8601 === new Date().toISOString().split('T')[0]) || j[0];
+    if(j && j.data && j.data.timings){
+      const t = j.data.timings;
       _namazVakitler = {
-        imsak: bugun.Imsak,
-        sabah: bugun.Sabah,
-        ogle:  bugun.Ogle,
-        ikindi:bugun.Ikindi,
-        aksam: bugun.Aksam,
-        yatsi: bugun.Yatsi
+        sabah:  t.Fajr.substring(0,5),
+        ogle:   t.Dhuhr.substring(0,5),
+        ikindi: t.Asr.substring(0,5),
+        aksam:  t.Maghrib.substring(0,5),
+        yatsi:  t.Isha.substring(0,5)
       };
       renderNamazWidget();
     }
   }catch(e){
-    // API hata verirse sessizce geç
-    document.getElementById('namazVakitler').innerHTML = '<div style="color:var(--muted);font-size:10px;text-align:center;grid-column:span 5;">Vakitler yüklenemedi</div>';
+    const el = document.getElementById('namazVakitler');
+    if(el) el.innerHTML = '<div style="color:var(--muted);font-size:10px;text-align:center;grid-column:span 5;">Vakitler yüklenemedi</div>';
   }
 }
 
