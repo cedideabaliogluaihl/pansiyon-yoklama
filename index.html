@@ -281,7 +281,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
     <div id="namazWidget" style="width:100%;max-width:320px;background:var(--surface2);border-radius:14px;border:1px solid var(--border);padding:10px 14px;">
       <div style="font-size:13px;font-weight:700;color:var(--accent);text-align:center;margin-bottom:6px;">🕌 NAMAZ VAKİTLERİ</div>
       <div style="font-size:10px;color:var(--muted);text-align:center;margin-bottom:8px;">Denizli - Merkezefendi</div>
-      <div id="namazVakitler" style="display:grid;grid-template-columns:repeat(6,1fr);gap:3px;"><div style="color:var(--muted);font-size:10px;text-align:center;grid-column:span 6;padding:8px;">Yükleniyor...</div></div>
+      <div id="namazVakitler" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;"><div style="color:var(--muted);font-size:10px;text-align:center;grid-column:span 7;padding:8px;">Yükleniyor...</div></div>
       <div id="namazSonraki" style="margin-top:8px;font-size:11px;text-align:center;color:var(--accent);font-weight:600;"></div>
     </div>
     <div class="login-logo">📋</div>
@@ -1515,6 +1515,7 @@ async function loadNamazVakitleri(){
       _namazVakitler = {
         imsak:  t.Imsak ? t.Imsak.substring(0,5) : t.Fajr.substring(0,5),
         sabah:  t.Fajr.substring(0,5),
+        gunes:  t.Sunrise.substring(0,5),
         ogle:   t.Dhuhr.substring(0,5),
         ikindi: t.Asr.substring(0,5),
         aksam:  t.Maghrib.substring(0,5),
@@ -1534,6 +1535,7 @@ function renderNamazWidget(){
   const vakitler = [
     {ad:'İmsak', saat:v.imsak, ikon:'🌑'},
     {ad:'Sabah', saat:v.sabah, ikon:'🌄'},
+    {ad:'Güneş', saat:v.gunes, ikon:'🌅'},
     {ad:'Öğle',  saat:v.ogle,  ikon:'☀️'},
     {ad:'İkindi',saat:v.ikindi,ikon:'🌤'},
     {ad:'Akşam', saat:v.aksam, ikon:'🌆'},
@@ -1580,22 +1582,27 @@ function updateNamazCountdown(vakitler, sonrakiIdx, toMin){
   const nowMin = now.getHours()*60 + now.getMinutes();
   const nowSec = now.getSeconds();
 
-  if(sonrakiIdx === -1){
-    sonrakiEl.textContent = '✅ Tüm vakitler tamamlandı';
-    return;
-  }
+  let kalanSn, label;
 
-  const sonraki = vakitler[sonrakiIdx];
-  const sonrakiMin = toMin(sonraki.saat);
-  let kalanSn = (sonrakiMin - nowMin) * 60 - nowSec;
-  if(kalanSn < 0) kalanSn = 0;
+  if(sonrakiIdx === -1){
+    // Tüm vakitler bitti — ertesi günün imsakına say
+    const imsakMin = toMin(vakitler[0].saat); // İmsak ilk vakit
+    let kalanDakika = (24*60 - nowMin) + imsakMin;
+    kalanSn = kalanDakika * 60 - nowSec;
+    label = 'İmsak';
+  } else {
+    const sonraki = vakitler[sonrakiIdx];
+    const sonrakiMin = toMin(sonraki.saat);
+    kalanSn = (sonrakiMin - nowMin) * 60 - nowSec;
+    if(kalanSn < 0) kalanSn = 0;
+    label = sonraki.ad;
+  }
 
   const s = Math.floor(kalanSn % 60).toString().padStart(2,'0');
   const m = Math.floor((kalanSn/60) % 60).toString().padStart(2,'0');
   const h = Math.floor(kalanSn/3600);
-
   const kalanStr = h > 0 ? `${h}:${m}:${s}` : `${m}:${s}`;
-  sonrakiEl.textContent = `⏰ ${sonraki.ad} namazına ${kalanStr} kaldı`;
+  sonrakiEl.textContent = `⏰ ${label} vaktine ${kalanStr} kaldı`;
 }
 
 function startNamazTimer(){
