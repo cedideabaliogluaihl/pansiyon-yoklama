@@ -279,11 +279,9 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
   <div class="login-wrap">
     <!-- Namaz Vakitleri -->
     <div id="namazWidget" style="width:100%;max-width:320px;background:var(--surface2);border-radius:14px;border:1px solid var(--border);padding:10px 14px;">
-        <div style="font-size:13px;font-weight:700;color:var(--accent);text-align:center;margin-bottom:6px;">🕌 NAMAZ VAKİTLERİ</div>
-        <div style="font-size:10px;color:var(--muted);text-align:center;margin-bottom:8px;">Denizli - Merkezefendi</div>
-      <div id="namazVakitler" style="display:grid;grid-template-columns:repeat(6,1fr);gap:3px;">
-        <div style="text-align:center;color:var(--muted);font-size:10px;padding:8px 2px;">Yükleniyor...</div>
-      </div>
+      <div style="font-size:13px;font-weight:700;color:var(--accent);text-align:center;margin-bottom:6px;">🕌 NAMAZ VAKİTLERİ</div>
+      <div style="font-size:10px;color:var(--muted);text-align:center;margin-bottom:8px;">Denizli - Merkezefendi</div>
+      <div id="namazVakitler" style="display:grid;grid-template-columns:repeat(6,1fr);gap:3px;"><div style="color:var(--muted);font-size:10px;text-align:center;grid-column:span 6;padding:8px;">Yükleniyor...</div></div>
       <div id="namazSonraki" style="margin-top:8px;font-size:11px;text-align:center;color:var(--accent);font-weight:600;"></div>
     </div>
     <div class="login-logo">📋</div>
@@ -1575,16 +1573,14 @@ function renderNamazWidget(){
 }
 
 function updateNamazCountdown(vakitler, sonrakiIdx, toMin){
-  const countdownEl = document.getElementById('namazCountdown');
   const sonrakiEl = document.getElementById('namazSonraki');
-  if(!countdownEl || !sonrakiEl) return;
+  if(!sonrakiEl) return;
 
   const now = new Date();
   const nowMin = now.getHours()*60 + now.getMinutes();
   const nowSec = now.getSeconds();
 
   if(sonrakiIdx === -1){
-    countdownEl.textContent = '';
     sonrakiEl.textContent = '✅ Tüm vakitler tamamlandı';
     return;
   }
