@@ -281,8 +281,14 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
     <div id="namazWidget" style="width:100%;max-width:320px;background:var(--surface2);border-radius:14px;border:1px solid var(--border);padding:10px 14px;">
       <div style="font-size:13px;font-weight:700;color:var(--accent);text-align:center;margin-bottom:6px;">🕌 NAMAZ VAKİTLERİ</div>
       <div style="font-size:10px;color:var(--muted);text-align:center;margin-bottom:8px;">Denizli - Merkezefendi</div>
-      <div id="namazVakitler" style="display:grid;grid-template-columns:repeat(7,1fr);gap:2px;"><div style="color:var(--muted);font-size:10px;text-align:center;grid-column:span 7;padding:8px;">Yükleniyor...</div></div>
+      <div id="namazVakitler" style="display:grid;grid-template-columns:repeat(6,1fr);gap:3px;"><div style="color:var(--muted);font-size:10px;text-align:center;grid-column:span 6;padding:8px;">Yükleniyor...</div></div>
       <div id="namazSonraki" style="margin-top:8px;font-size:11px;text-align:center;color:var(--accent);font-weight:600;"></div>
+    </div>
+    <!-- Ayet ve Hadis -->
+    <div id="ayetHadisWidget" style="width:100%;max-width:320px;background:var(--surface2);border-radius:14px;border:1px solid var(--border);padding:12px 14px;">
+      <div id="ayetHadisContent" style="font-size:12px;color:var(--text);line-height:1.6;text-align:center;">
+        <div style="color:var(--muted);font-size:11px;">📖 Yükleniyor...</div>
+      </div>
     </div>
     <div class="login-logo">📋</div>
     <div style="text-align:center;">
@@ -1022,6 +1028,8 @@ window.addEventListener('load',()=>{
   loadAdminPin().catch(()=>{});
   // Namaz vakitleri
   startNamazTimer();
+  // Günlük ayet ve hadis
+  loadAyetHadis();
   // Çizelgeyi yükle ve vakit butonlarını güncelle
   loadCizelge().then(()=>updateVakitSaatleri()).catch(()=>{});
   // PDF butonu sadece PC'de görünsün
@@ -1533,7 +1541,6 @@ function renderNamazWidget(){
   if(!_namazVakitler) return;
   const v = _namazVakitler;
   const vakitler = [
-    {ad:'İmsak', saat:v.imsak, ikon:'🌑'},
     {ad:'Sabah', saat:v.sabah, ikon:'🌄'},
     {ad:'Güneş', saat:v.gunes, ikon:'🌅'},
     {ad:'Öğle',  saat:v.ogle,  ikon:'☀️'},
@@ -1585,11 +1592,11 @@ function updateNamazCountdown(vakitler, sonrakiIdx, toMin){
   let kalanSn, label;
 
   if(sonrakiIdx === -1){
-    // Tüm vakitler bitti — ertesi günün imsakına say
-    const imsakMin = toMin(vakitler[0].saat); // İmsak ilk vakit
-    let kalanDakika = (24*60 - nowMin) + imsakMin;
+    // Tüm vakitler bitti — ertesi günün Sabah vaktine say
+    const sabahMin = toMin(vakitler[0].saat); // Sabah ilk vakit
+    let kalanDakika = (24*60 - nowMin) + sabahMin;
     kalanSn = kalanDakika * 60 - nowSec;
-    label = 'İmsak';
+    label = 'Sabah';
   } else {
     const sonraki = vakitler[sonrakiIdx];
     const sonrakiMin = toMin(sonraki.saat);
@@ -1603,6 +1610,76 @@ function updateNamazCountdown(vakitler, sonrakiIdx, toMin){
   const h = Math.floor(kalanSn/3600);
   const kalanStr = h > 0 ? `${h}:${m}:${s}` : `${m}:${s}`;
   sonrakiEl.textContent = `⏰ ${label} vaktine ${kalanStr} kaldı`;
+}
+
+// ══════════════════════════════════════
+// GÜNLÜK AYET VE HADİS
+// ══════════════════════════════════════
+async function loadAyetHadis(){
+  const bugun = today.toISOString().split('T')[0];
+  const cacheKey = 'ayetHadis_'+bugun;
+
+  // Önce cache'e bak
+  try{
+    const cached = localStorage.getItem(cacheKey);
+    if(cached){
+      renderAyetHadis(JSON.parse(cached));
+      return;
+    }
+  }catch(e){}
+
+  // Firebase'de var mı?
+  try{
+    const r = await fetch(FB_URL+'/ayetHadis/'+bugun+'.json?'+Date.now(),{cache:'no-store'});
+    const j = await r.json();
+    if(j && j.ayet){
+      localStorage.setItem(cacheKey, JSON.stringify(j));
+      renderAyetHadis(j);
+      return;
+    }
+  }catch(e){}
+
+  // Claude API'den yeni üret
+  try{
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 400,
+        messages:[{
+          role:'user',
+          content: `Bugün ${bugun} tarihi için kısa bir Kuran ayeti meali ve kısa bir hadis yaz. JSON formatında döndür, başka hiçbir şey yazma:
+{"ayet":"Ayet metni (sure adı ve ayet numarası ile)", "hadis":"Hadis metni (kaynağı ile)"}`
+        }]
+      })
+    });
+    const data = await res.json();
+    const text = data.content[0].text.trim();
+    const clean = text.replace(/```json|```/g,'').trim();
+    const parsed = JSON.parse(clean);
+
+    // Firebase'e kaydet
+    fetch(FB_URL+'/ayetHadis/'+bugun+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(parsed)}).catch(()=>{});
+    localStorage.setItem(cacheKey, JSON.stringify(parsed));
+    renderAyetHadis(parsed);
+  }catch(e){
+    document.getElementById('ayetHadisContent').innerHTML = '<div style="color:var(--muted);font-size:11px;">📖 İçerik yüklenemedi</div>';
+  }
+}
+
+function renderAyetHadis(data){
+  const el = document.getElementById('ayetHadisContent');
+  if(!el) return;
+  el.innerHTML = `
+    <div style="margin-bottom:10px;">
+      <div style="font-size:10px;font-weight:700;color:var(--accent);margin-bottom:4px;">📖 GÜNÜN AYETİ</div>
+      <div style="font-size:12px;color:var(--text);line-height:1.6;font-style:italic;">"${data.ayet}"</div>
+    </div>
+    <div style="border-top:1px solid var(--border);padding-top:10px;">
+      <div style="font-size:10px;font-weight:700;color:var(--accent);margin-bottom:4px;">🕌 GÜNÜN HADİSİ</div>
+      <div style="font-size:12px;color:var(--text);line-height:1.6;font-style:italic;">"${data.hadis}"</div>
+    </div>`;
 }
 
 function startNamazTimer(){
