@@ -279,11 +279,9 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
   <div class="login-wrap">
     <!-- Namaz Vakitleri -->
     <div id="namazWidget" style="width:100%;max-width:320px;background:var(--surface2);border-radius:14px;border:1px solid var(--border);padding:10px 14px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
-        <div style="font-size:11px;font-weight:700;color:var(--accent);">🕌 DENİZLİ - MERKEZEFENDİ</div>
-        <div id="namazCountdown" style="font-size:11px;color:var(--muted);"></div>
-      </div>
-      <div id="namazVakitler" style="display:grid;grid-template-columns:repeat(5,1fr);gap:4px;">
+        <div style="font-size:13px;font-weight:700;color:var(--accent);text-align:center;margin-bottom:6px;">🕌 NAMAZ VAKİTLERİ</div>
+        <div style="font-size:10px;color:var(--muted);text-align:center;margin-bottom:8px;">Denizli - Merkezefendi</div>
+      <div id="namazVakitler" style="display:grid;grid-template-columns:repeat(6,1fr);gap:3px;">
         <div style="text-align:center;color:var(--muted);font-size:10px;padding:8px 2px;">Yükleniyor...</div>
       </div>
       <div id="namazSonraki" style="margin-top:8px;font-size:11px;text-align:center;color:var(--accent);font-weight:600;"></div>
@@ -419,6 +417,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
         <div class="date-badge" id="currentDate"></div>
         <button onclick="refreshData()" title="Yenile" style="padding:4px 8px;border-radius:7px;border:1px solid var(--border);background:var(--surface2);color:var(--accent);font-size:14px;cursor:pointer;line-height:1;" id="refreshBtn">🔄</button>
         <button class="logout-btn" id="resetNameBtn" style="display:none;background:var(--surface2);color:var(--accent);border:1px solid var(--accent);" onclick="openAdminPanel()">⚙️</button>
+        <button class="logout-btn" id="adminMenuBtn" style="display:none;background:var(--surface2);color:var(--accent);border:1px solid var(--accent);" onclick="goScreen('screenAdminMenu')">← Menü</button>
         <button class="logout-btn" id="sifreDegistirBtn" style="display:none;background:var(--surface2);color:var(--accent);border:1px solid var(--accent);" onclick="openSifreDegistirModal()">🔑 Şifre</button>
         <button class="logout-btn" onclick="logout()">Çıkış</button>
       </div>
@@ -1222,9 +1221,11 @@ async function continueStartApp(floor, selectedKey){
   document.getElementById('adminBadge').classList.toggle('hidden',!isAdmin);
   if(isAdmin){ 
     document.getElementById('resetNameBtn').style.display='';
+    document.getElementById('adminMenuBtn').style.display='';
     document.getElementById('sifreDegistirBtn').style.display='none';
   } else {
     document.getElementById('resetNameBtn').style.display='none';
+    document.getElementById('adminMenuBtn').style.display='none';
     document.getElementById('sifreDegistirBtn').style.display='';
   }
   
@@ -1514,6 +1515,7 @@ async function loadNamazVakitleri(){
     if(j && j.data && j.data.timings){
       const t = j.data.timings;
       _namazVakitler = {
+        imsak:  t.Imsak ? t.Imsak.substring(0,5) : t.Fajr.substring(0,5),
         sabah:  t.Fajr.substring(0,5),
         ogle:   t.Dhuhr.substring(0,5),
         ikindi: t.Asr.substring(0,5),
@@ -1532,6 +1534,7 @@ function renderNamazWidget(){
   if(!_namazVakitler) return;
   const v = _namazVakitler;
   const vakitler = [
+    {ad:'İmsak', saat:v.imsak, ikon:'🌑'},
     {ad:'Sabah', saat:v.sabah, ikon:'🌄'},
     {ad:'Öğle',  saat:v.ogle,  ikon:'☀️'},
     {ad:'İkindi',saat:v.ikindi,ikon:'🌤'},
