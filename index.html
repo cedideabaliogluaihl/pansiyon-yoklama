@@ -1615,57 +1615,47 @@ function updateNamazCountdown(vakitler, sonrakiIdx, toMin){
 // ══════════════════════════════════════
 // GÜNLÜK AYET VE HADİS
 // ══════════════════════════════════════
-async function loadAyetHadis(){
-  const bugun = today.toISOString().split('T')[0];
-  const cacheKey = 'ayetHadis_'+bugun;
+const AYET_HADIS_LIST = [
+  {ayet:"Allah, sabredenlerle beraberdir. (Bakara, 153)", hadis:"Güçlü kişi güreşte rakibini yenen değil, öfkelendiğinde kendine hâkim olandır. (Buhârî)"},
+  {ayet:"Şüphesiz Allah, adaleti, iyilik yapmayı ve yakınlara yardım etmeyi emreder. (Nahl, 90)", hadis:"Komşusu açken tok yatan bizden değildir. (Hâkim)"},
+  {ayet:"Rabbiniz: 'Bana dua edin, kabul edeyim' dedi. (Mümin, 60)", hadis:"Dua ibadetin özüdür. (Tirmizî)"},
+  {ayet:"Kim bir iyilik yaparsa ona on katı verilir. (En'am, 160)", hadis:"Kolaylaştırın, zorlaştırmayın; müjdeleyin, nefret ettirmeyin. (Buhârî)"},
+  {ayet:"Şüphesiz güçlük ile birlikte kolaylık vardır. (İnşirah, 5)", hadis:"Müslüman, dilinden ve elinden Müslümanların zarar görmediği kişidir. (Buhârî)"},
+  {ayet:"Allah hiçbir kimseye gücünün üzerinde yük yüklemez. (Bakara, 286)", hadis:"İnsanlara teşekkür etmeyen, Allah'a da şükretmez. (Ebû Dâvud)"},
+  {ayet:"Şüphesiz namaz, hayâsızlıktan ve kötülükten alıkoyar. (Ankebut, 45)", hadis:"En hayırlınız ahlakça en güzel olanınızdır. (Buhârî)"},
+  {ayet:"Her nerede olursanız olun, Allah sizinle beraberdir. (Hadid, 4)", hadis:"Komşusunun şerrinden emin olmadığı kişi cennete giremez. (Müslim)"},
+  {ayet:"Allah korkusu, hikmeti başlatır. (Hakka, 10 — Tefsir)", hadis:"Şüphesiz ameller niyetlere göredir. (Buhârî)"},
+  {ayet:"Rabbim, ilmimi artır. (Taha, 114)", hadis:"İlim öğrenmek her Müslümana farzdır. (İbn Mâce)"},
+  {ayet:"Kim Allah'a tevekkül ederse Allah ona yeter. (Talak, 3)", hadis:"Güçlü mümini Allah daha çok sever. (Müslim)"},
+  {ayet:"Şüphesiz Allah, tövbe edenleri ve temizlenenleri sever. (Bakara, 222)", hadis:"Her gün güneş doğduğunda insanlara iyilik yapmak sadakadır. (Buhârî)"},
+  {ayet:"Birbirinize karşı alçakgönüllü olun. (Hicr, 88)", hadis:"Güler yüzle karşılamak da sadakadır. (Tirmizî)"},
+  {ayet:"Allah, sabreden ve şükredenleri sever. (İbrahim, 5)", hadis:"Helâl kazanmak farzdır. (Beyhakî)"},
+  {ayet:"İnsanlara güzel söz söyleyin. (Bakara, 83)", hadis:"Cömertlik cennete yaklaştırır. (Tirmizî)"},
+  {ayet:"En güzel söz Allah'ın kitabıdır. (Mâide, 15 — Tefsir)", hadis:"Bir müminin diğer mümine karşı durumu binalar gibidir, birbirini sağlamlaştırır. (Buhârî)"},
+  {ayet:"O, Rahman ve Rahimdir. (Fatiha, 3)", hadis:"Merhamet etmeyene merhamet edilmez. (Buhârî)"},
+  {ayet:"Allah dilediğini bağışlar, dilediğine azap eder. (Bakara, 284)", hadis:"Kul, kardeşini affettiğinde Allah onu affeder. (Ebû Dâvud)"},
+  {ayet:"Şüphesiz Allah, sabreden kullarıyla beraberdir. (Bakara, 249)", hadis:"Sıla-i rahmi kesen cennete giremez. (Müslim)"},
+  {ayet:"Allahu Ekber — Allah hepsinden büyüktür. (Hac, 37)", hadis:"İnsanların en hayırlısı insanlara en faydalı olandır. (Beyhakî)"},
+  {ayet:"Allah'ın rahmeti iyilik edenlere yakındır. (A'raf, 56)", hadis:"Borcunu ödemek de ibadettir. (Nesaî)"},
+  {ayet:"Kim Allah'a güvenirse O ona yeter. (Talak, 3)", hadis:"Namaz, dinin direğidir. (Beyhakî)"},
+  {ayet:"Rabbinizin nimetlerinden hangisini yalanlarsınız? (Rahman, 13)", hadis:"İki nimet var ki insanların çoğu bu konuda aldanmıştır: Sağlık ve boş vakit. (Buhârî)"},
+  {ayet:"Şüphesiz Allah zulmedenleri sevmez. (Âl-i İmrân, 57)", hadis:"Mazlumun duasından sakının. (Buhârî)"},
+  {ayet:"Yeryüzünde mütevazı yürü. (İsrâ, 37)", hadis:"Kibir, hakkı kabul etmemek ve insanları küçük görmektir. (Müslim)"},
+  {ayet:"Her canlı ölümü tadacaktır. (Âl-i İmrân, 185)", hadis:"Ölümü çok anın, o her lezzeti yok eder. (Tirmizî)"},
+  {ayet:"Allah'ı zikredin ki kalpleriniz huzur bulsun. (Ra'd, 28)", hadis:"Kalpler paslanır; zikir ile parlar. (Beyhakî)"},
+  {ayet:"Birbirinizle barışın. (Hucurât, 10)", hadis:"İki kişinin arasını düzeltmek nafile namazdan üstündür. (Ebû Dâvud)"},
+  {ayet:"İyilikle kötülük bir olmaz. (Fussilet, 34)", hadis:"Güzel ahlak, günahları eritir tıpkı suyun buzu erittiği gibi. (Taberânî)"},
+  {ayet:"Allah her şeyi bilendir. (Bakara, 29)", hadis:"İnsanlar uyurken sen ibadet et. (Tirmizî)"},
+];
 
-  // Önce cache'e bak
-  try{
-    const cached = localStorage.getItem(cacheKey);
-    if(cached){
-      renderAyetHadis(JSON.parse(cached));
-      return;
-    }
-  }catch(e){}
-
-  // Firebase'de var mı?
-  try{
-    const r = await fetch(FB_URL+'/ayetHadis/'+bugun+'.json?'+Date.now(),{cache:'no-store'});
-    const j = await r.json();
-    if(j && j.ayet){
-      localStorage.setItem(cacheKey, JSON.stringify(j));
-      renderAyetHadis(j);
-      return;
-    }
-  }catch(e){}
-
-  // Claude API'den yeni üret
-  try{
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 400,
-        messages:[{
-          role:'user',
-          content: `Bugün ${bugun} tarihi için kısa bir Kuran ayeti meali ve kısa bir hadis yaz. JSON formatında döndür, başka hiçbir şey yazma:
-{"ayet":"Ayet metni (sure adı ve ayet numarası ile)", "hadis":"Hadis metni (kaynağı ile)"}`
-        }]
-      })
-    });
-    const data = await res.json();
-    const text = data.content[0].text.trim();
-    const clean = text.replace(/```json|```/g,'').trim();
-    const parsed = JSON.parse(clean);
-
-    // Firebase'e kaydet
-    fetch(FB_URL+'/ayetHadis/'+bugun+'.json',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(parsed)}).catch(()=>{});
-    localStorage.setItem(cacheKey, JSON.stringify(parsed));
-    renderAyetHadis(parsed);
-  }catch(e){
-    document.getElementById('ayetHadisContent').innerHTML = '<div style="color:var(--muted);font-size:11px;">📖 İçerik yüklenemedi</div>';
-  }
+function loadAyetHadis(){
+  const bugun = today;
+  // Yılın kaçıncı günü? Her gün farklı ayet/hadis
+  const baslangic = new Date(bugun.getFullYear(), 0, 0);
+  const fark = bugun - baslangic;
+  const gunNo = Math.floor(fark / (1000*60*60*24));
+  const idx = gunNo % AYET_HADIS_LIST.length;
+  renderAyetHadis(AYET_HADIS_LIST[idx]);
 }
 
 function renderAyetHadis(data){
