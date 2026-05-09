@@ -426,13 +426,15 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
         <button class="logout-btn" onclick="logout()">Çıkış</button>
       </div>
     </div>
-    <div class="time-selector">
-      <button class="time-btn active" data-time="Akşam" onclick="setTime('Akşam')">🕌 Akşam Namazı</button>
-      <button class="time-btn" data-time="Telefon" onclick="setTime('Telefon')">📞 Telefon</button>
-      <button class="time-btn" data-time="Etüt" onclick="setTime('Etüt')">📚 Etüt</button>
-      <button class="time-btn" data-time="Yatsı" onclick="setTime('Yatsı')">🕌 Yatsı Namazı</button>
-      <button class="time-btn" data-time="Uyku" onclick="setTime('Uyku')">🛏 Yat Yoklaması</button>
-      <button class="time-btn" data-time="Sabah" onclick="setTime('Sabah')">🌅 Sabah Namazı</button>
+    <div style="padding:6px 12px;background:var(--surface);border-bottom:1px solid var(--border);">
+      <select id="vakitDropdown" onchange="setTime(this.value)" style="width:100%;padding:8px 12px;border-radius:10px;border:1.5px solid var(--accent);background:var(--surface2);color:var(--text);font-size:14px;font-weight:700;font-family:'Noto Sans',sans-serif;cursor:pointer;outline:none;">
+        <option value="Akşam">🕌 Akşam Namazı</option>
+        <option value="Telefon">📞 Telefon</option>
+        <option value="Etüt">📚 Etüt</option>
+        <option value="Yatsı">🕌 Yatsı Namazı</option>
+        <option value="Uyku">🛏 Yat Yoklaması</option>
+        <option value="Sabah">🌅 Sabah Namazı</option>
+      </select>
     </div>
     <!-- GÜNÜN PROGRAMI -->
     <div id="gunProgrami" style="display:none;padding:4px 12px 6px;background:var(--surface);border-bottom:1px solid var(--border);overflow-x:auto;white-space:nowrap;scrollbar-width:none;"></div>
@@ -1086,7 +1088,7 @@ async function startAdminMain(){
   const roomSel=document.getElementById('roomFilter');
   roomSel.innerHTML='<option value="">Tüm</option>';
   FLOORS[2].rooms.forEach(r=>{const o=document.createElement('option');o.value=r;o.textContent=r;roomSel.appendChild(o);});
-  document.querySelectorAll('.time-btn').forEach(b=>b.classList.toggle('active', b.getAttribute('data-time')==='Akşam'));
+  
   filterText='';filterRoomVal='';
   goScreen('screenMain');
   await loadFromStorage(currentFloor);
@@ -1112,7 +1114,7 @@ async function adminSwitchFloor(floor){
   const roomSel=document.getElementById('roomFilter');
   roomSel.innerHTML='<option value="">Tüm</option>';
   FLOORS[floor].rooms.forEach(r=>{const o=document.createElement('option');o.value=r;o.textContent=r;roomSel.appendChild(o);});
-  document.querySelectorAll('.time-btn').forEach(b=>b.classList.toggle('active', b.getAttribute('data-time')==='Akşam'));
+  
   filterText='';filterRoomVal='';
   await loadFromStorage(floor);
   renderAll();updateStats();updateSaveBtn();
@@ -1239,7 +1241,7 @@ async function continueStartApp(floor, selectedKey){
   const roomSel=document.getElementById('roomFilter');
   roomSel.innerHTML='<option value="">Tüm</option>';
   FLOORS[floor].rooms.forEach(r=>{const o=document.createElement('option');o.value=r;o.textContent=r;roomSel.appendChild(o);});
-  document.querySelectorAll('.time-btn').forEach(b=>b.classList.toggle('active', b.getAttribute('data-time')==='Akşam'));
+  
   filterText='';filterRoomVal='';
   goScreen('screenMain');
   // Önce izinleri taze çek
@@ -1681,6 +1683,53 @@ function startNamazTimer(){
   setInterval(()=>{
     loadNamazVakitleri();
   }, 60*60*1000);
+}
+
+function getOtomatikVakit(){
+  // Zaman çizelgesindeki saatlere göre vakit tespit et
+  const now = new Date();
+  const nowMin = now.getHours()*60 + now.getMinutes();
+
+  const toMin = s => {
+    if(!s) return 0;
+    const [h,m] = s.split(':').map(Number);
+    return h*60+(m||0);
+  };
+
+  // Önce zaman çizelgesinden saatleri al
+  const vakitSaatleri = {
+    'Akşam': 18*60+30,
+    'Telefon': 20*60,
+    'Etüt': 20*60+30,
+    'Yatsı': 21*60+30,
+    'Uyku': 23*60+10,
+    'Sabah': 6*60+30
+  };
+
+  // Zaman çizelgesinde varsa güncelle
+  if(_cizelge && _cizelge.rows){
+    _cizelge.rows.forEach((row,ri) => {
+      if(!row.label) return;
+      const m = row.label.match(/\d{1,2}[:.]\d{2}/);
+      if(!m) return;
+      const saat = m[0].replace('.',':');
+      TIMES.forEach(t => {
+        if(row.label.toLowerCase().includes(t.toLowerCase())){
+          vakitSaatleri[t] = toMin(saat);
+        }
+      });
+    });
+  }
+
+  // Şu ana en yakın geçmiş vakti bul
+  let secilenVakit = 'Akşam';
+  const siralanmis = TIMES.map(t => ({t, min: vakitSaatleri[t]||0})).sort((a,b)=>a.min-b.min);
+
+  for(let i=0; i<siralanmis.length; i++){
+    if(nowMin >= siralanmis[i].min) secilenVakit = siralanmis[i].t;
+  }
+
+  return secilenVakit;
 }
 
 function logout(){
@@ -2679,7 +2728,9 @@ async function setTime(t){
       hideSync();
     }
   }
-  document.querySelectorAll('.time-btn').forEach(b=>b.classList.toggle('active', b.getAttribute('data-time')===t));
+  // Dropdown'u güncelle
+  const dd = document.getElementById('vakitDropdown');
+  if(dd) dd.value = t;
   renderAll();updateStats();saveToStorage();updateSaveBtn();
 }
 
