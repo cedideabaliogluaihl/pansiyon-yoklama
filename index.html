@@ -1075,7 +1075,7 @@ async function startAdminMain(){
   currentFloor=2; students=FLOORS[2].students;
   window._activeKey = todayKey;
   attendance=Object.fromEntries(students.map(s=>[String(s.id),false]));
-  attendanceHistory={}; currentTime='Akşam';
+  attendanceHistory={}; currentTime=getOtomatikVakit(); setTimeout(()=>{const _dd=document.getElementById('vakitDropdown');if(_dd)_dd.value=currentTime;},100);
   document.getElementById('adminBadge').classList.remove('hidden');
   document.getElementById('resetNameBtn').style.display='none';
   document.getElementById('pdfBtn').style.display='';
@@ -1109,7 +1109,7 @@ async function adminSwitchFloor(floor){
   currentFloor=floor; students=FLOORS[floor].students;
   window._activeKey = todayKey;
   attendance=Object.fromEntries(students.map(s=>[String(s.id),false]));
-  attendanceHistory={}; currentTime='Akşam';
+  attendanceHistory={}; currentTime=getOtomatikVakit(); setTimeout(()=>{const _dd=document.getElementById('vakitDropdown');if(_dd)_dd.value=currentTime;},100);
   updateFloorBtns(floor);
   const roomSel=document.getElementById('roomFilter');
   roomSel.innerHTML='<option value="">Tüm</option>';
@@ -1223,7 +1223,7 @@ async function continueStartApp(floor, selectedKey){
   await loadFloorsFromCloud();
   students = FLOORS[floor].students;
   attendance=Object.fromEntries(students.map(s=>[String(s.id),false]));
-  attendanceHistory={}; currentTime='Akşam';
+  attendanceHistory={}; currentTime=getOtomatikVakit(); setTimeout(()=>{const _dd=document.getElementById('vakitDropdown');if(_dd)_dd.value=currentTime;},100);
   // Header
   document.getElementById('floorBadge').textContent=FLOORS[floor].label;
   document.getElementById('adminBadge').classList.toggle('hidden',!isAdmin);
