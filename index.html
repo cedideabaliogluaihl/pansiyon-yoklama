@@ -298,6 +298,7 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
     <div class="login-btns">
       <button class="login-btn btn-nobetci" onclick="goKatSec()">👮 Nöbetçi Girişi</button>
       <button class="login-btn btn-admin" onclick="goAdmin()" style="margin-top:4px;">🔐 Admin Girişi</button>
+      <button class="login-btn" onclick="openNobetTakvimi()" style="margin-top:4px;background:linear-gradient(135deg,#1d4ed8,#2563eb);color:#fff;">📅 Nöbet Takvimi</button>
     </div>
   </div>
 </div>
@@ -347,6 +348,17 @@ body{background:var(--bg);color:var(--text);font-family:'Noto Sans',sans-serif;m
   </div>
 </div>
 
+
+<!-- NÖBET TAKVİMİ MODAL -->
+<div class="modal-overlay hidden" id="nobetTakvimiModal" onclick="if(event.target.id==='nobetTakvimiModal')closeNobetTakvimi()">
+  <div class="modal-sheet" style="max-width:360px;margin:auto;">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📅 Bu Haftaki Nöbet Takvimi
+      <button class="modal-close" onclick="closeNobetTakvimi()">✕</button>
+    </div>
+    <div id="nobetTakvimiContent" style="overflow-y:auto;max-height:65vh;padding-bottom:8px;"></div>
+  </div>
+</div>
 
 <div class="screen" id="screenAdminMenu">
   <div class="kat-wrap">
@@ -1683,6 +1695,56 @@ function startNamazTimer(){
   setInterval(()=>{
     loadNamazVakitleri();
   }, 60*60*1000);
+}
+
+function openNobetTakvimi(){
+  document.getElementById('nobetTakvimiModal').classList.remove('hidden');
+  renderNobetTakvimi();
+}
+function closeNobetTakvimi(){
+  document.getElementById('nobetTakvimiModal').classList.add('hidden');
+}
+
+async function renderNobetTakvimi(){
+  const el = document.getElementById('nobetTakvimiContent');
+  el.innerHTML = '<div style="color:var(--muted);text-align:center;padding:20px;">⏳ Yükleniyor...</div>';
+
+  // Firebase'den tüm atamaları çek
+  let assignments = {};
+  try{
+    const r = await fetch(FB_URL+'/assignments.json?'+Date.now(),{cache:'no-store'});
+    const j = await r.json();
+    if(j) assignments = j;
+  }catch(e){}
+
+  const weekDates = getWeekDates();
+  const DAYS_TR = ['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'];
+
+  let html = '';
+  weekDates.forEach(({key, label, short}, idx) => {
+    const key2 = `f2_${key}`;
+    const key3 = `f3_${key}`;
+    const isToday = key === todayKey;
+
+    html += `<div style="margin-bottom:10px;border-radius:10px;border:1.5px solid ${isToday?'var(--accent)':'var(--border)'};overflow:hidden;">
+      <div style="padding:7px 12px;background:${isToday?'var(--accent)':'var(--surface2)'};display:flex;align-items:center;justify-content:space-between;">
+        <span style="font-size:13px;font-weight:700;color:${isToday?'#000':'var(--text)'};">${DAYS_TR[idx]}</span>
+        <span style="font-size:11px;color:${isToday?'#000':'var(--muted)'};">${short}${isToday?' • Bugün':''}</span>
+      </div>`;
+
+    [2,3].forEach(f => {
+      const k = `f${f}_${key}`;
+      const atama = assignments[k];
+      html += `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-top:1px solid var(--border);">
+        <span style="font-size:11px;color:var(--muted);font-weight:600;">${f}. Kat</span>
+        <span style="font-size:12px;font-weight:700;color:${atama?'var(--text)':'var(--muted)'};">${atama ? '👮 '+atama.name : '—'}</span>
+      </div>`;
+    });
+
+    html += `</div>`;
+  });
+
+  el.innerHTML = html || '<div style="color:var(--muted);text-align:center;padding:20px;">Nöbet ataması bulunamadı</div>';
 }
 
 function getOtomatikVakit(){
